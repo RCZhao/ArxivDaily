@@ -1,0 +1,10 @@
+#!/bin/bash
+CONDA_BIN=~/anaconda2/bin
+ARXIV=~/arxiv
+source $CONDA_BIN/activate py3
+python $ARXIV/arxiv_rank.py update
+python $ARXIV/arxiv_rank.py
+cp $ARXIV/$(date +%Y%m%d).html $ARXIV/index.html
+mv $ARXIV/$(date +%Y%m%d).html $ARXIV/arxiv_history/
+#python -m http.server -d $ARXIV
+

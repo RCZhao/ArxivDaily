@@ -1,0 +1,5 @@
+#!/bin/bash
+CONDA_BIN=~/anaconda2/bin
+ARXIV=~/arxiv
+source $CONDA_BIN/activate py3
+python -m http.server -d $ARXIV
