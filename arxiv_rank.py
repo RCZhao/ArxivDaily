@@ -16,7 +16,7 @@ __email__ = 'Friendshao@gmail.com'
 __licence__ = 'GPL'
 
 #---------------------------------------------------------------------
-BASE = '/users/rzhao/arxiv/'
+BASE = os.path.dirname(os.path.abspath(__file__))
 EXAMPLE_URL = 'https://arxiv.org/abs/1705.01278'
 
 # Overall score weights
@@ -101,14 +101,14 @@ class arXiv(object):
         score files
         """
         links = self.unique_favorite_arxiv_links()
-        new_links = list(set(open(BASE+'update_arxiv_links.txt').readlines()))
+        new_links = list(set(open(os.path.join(BASE, 'update_arxiv_links.txt')).readlines()))
         new_links = [x.replace('\n', '') for x in new_links if
                      x.replace('\n', '') not in links]
         # Erase the new arxiv link file
-        f = open(BASE+'update_arxiv_links.txt', 'w')
+        f = open(os.path.join(BASE, 'update_arxiv_links.txt'), 'w')
         f.close()
         # Update the favorite link file
-        with open(BASE+'favorite_arxiv_links.txt', 'a') as f:
+        with open(os.path.join(BASE, 'favorite_arxiv_links.txt'), 'a') as f:
             for link in new_links:
                 f.write(link + '\n')
         print('Score files updated with %d new links\n\n' % len(new_links),
@@ -124,7 +124,7 @@ class arXiv(object):
                 title_abstract[x] = title_abstract.get(x, 0.0) + t[x]
         with open(BASE+'author.pickle', 'wb') as f:
             pickle.dump(author, f)
-        with open(BASE+'title_abstract.pickle', 'wb') as f:
+        with open(os.path.join(BASE, 'author.pickle'), 'wb') as f:
             pickle.dump(title_abstract, f)
         # Print Top20 authors and keywords
         top20 = list(reversed(sorted(author, key=author.get)))[:20]
@@ -143,7 +143,7 @@ class arXiv(object):
 
         Return the list of unique and sorted links
         """
-        filename = BASE + 'favorite_arxiv_links.txt'
+        filename = os.path.join(BASE, 'favorite_arxiv_links.txt')
         links = list(set(open(filename).readlines()))
         links.sort()
         with open(filename, 'w') as f:
@@ -161,12 +161,12 @@ class arXiv(object):
     def load_score_files(self):
         """ Load the score files """
         author, title_abstract = dict(), dict()
-        author_pickle_filepath = BASE+'author.pickle'
+        author_pickle_filepath = os.path.join(BASE, 'author.pickle')
         if os.path.exists(author_pickle_filepath):
             if os.path.getsize(author_pickle_filepath) > 0:
                 with open(author_pickle_filepath, 'rb') as f:
                     author = pickle.load(f)
-        title_abstract_pickle_filepath = BASE+'title_abstract.pickle'
+        title_abstract_pickle_filepath = os.path.join(BASE, 'title_abstract.pickle')
         if os.path.exists(title_abstract_pickle_filepath):
             if os.path.getsize(title_abstract_pickle_filepath) > 0:
                 with open(title_abstract_pickle_filepath, 'rb') as f:
@@ -407,9 +407,8 @@ class arXiv(object):
         # Write to html file
         count = 0
         browser_cmd = "open"
-        out_file_name = BASE + \
-                time.strftime("%Y%m%d") + ".html"
-        f = open(out_file_name, "w");
+        out_file_name = os.path.join(BASE, time.strftime("%Y%m%d") + ".html")
+        f = open(out_file_name, "w")
         f.write('<html xmlns="http://www.w3.org/1999/xhtml" lang="en"> \n')
         f.write('<head><title>arXiv daily</title> \n' + MATHJAX + '</head>\n')
         f.write('<body class="with-cu-identity"> \n')
