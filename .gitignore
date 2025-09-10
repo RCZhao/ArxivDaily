@@ -12,3 +12,13 @@ __pycache__/
 
 # VSCode settings (optional)
 .vscode/
+
+# --- User-specific configuration ---
+# Ignore the local config file containing private API keys
+config.ini
+
+# --- Generated files (that are not the primary cache) ---
+analysis_results/
+
+# --- Cache files ---
+*.pickle

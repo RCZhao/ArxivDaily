@@ -27,21 +27,29 @@ jobs:
 
       - name: Download NLTK data
         run: |
-          python -m nltk.downloader punkt stopwords
+          python -m nltk.downloader punkt stopwords punkt_tab
 
-      - name: Check if favorite_arxiv_links.txt changed
-        id: fav_changed
+      - name: Create Zotero config file
         run: |
-          if git diff --quiet origin/main -- favorite_arxiv_links.txt; then
-            echo "changed=false" >> $GITHUB_OUTPUT
-          else
-            echo "changed=true" >> $GITHUB_OUTPUT
-          fi
+          echo "[zotero]" > config.ini
+          echo "user_id = ${{ secrets.ZOTERO_USER_ID }}" >> config.ini
+          echo "api_key = ${{ secrets.ZOTERO_API_KEY }}" >> config.ini
+        env:
+          ZOTERO_USER_ID: ${{ secrets.ZOTERO_USER_ID }}
+          ZOTERO_API_KEY: ${{ secrets.ZOTERO_API_KEY }}
+
+      - name: Cache arxiv_cache.pickle
+        id: cache-arxiv
+        uses: actions/cache@v4
+        with:
+          path: arxiv_cache.pickle
+          key: ${{ runner.os }}-arxiv-cache-${{ hashFiles('**/config.ini') }}
+          restore-keys: |
+            ${{ runner.os }}-arxiv-cache-
 
       - name: Update score files
-        if: steps.fav_changed.outputs.changed == 'true'
         run: |
-          python arxiv_rank.py update
+          python arxiv_engine.py update
 
       - name: Generate daily HTML
         run: |
@@ -50,14 +58,18 @@ jobs:
       - name: Copy and move HTML files
         run: |
           today=$(date +%Y%m%d)
-          cp $today.html index.html
-          mv $today.html arxiv_history/
+          if [ -f "$today.html" ]; then
+            cp $today.html index.html
+            mv $today.html arxiv_history/
+          else
+            echo "No HTML file generated today."
+          fi
 
       - name: Commit and push changes to main
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add favorite_arxiv_links.txt author.pickle title_abstract.pickle index.html arxiv_history/
+          git add index.html arxiv_history/
           git commit -m "Auto update arxiv daily results [skip ci]" || echo "Nothing to commit"
           git pull --rebase origin main
           git push origin main
