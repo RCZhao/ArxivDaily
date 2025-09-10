@@ -350,34 +350,46 @@ class arXiv(object):
         """ Format an entry from feedparser to html style """
         score, score_list = self.score_from_entry(entry, load_score=False,
                             score_files=(self.author, self.title_abstract))
-        title = entry['title'].split('arXiv:')
-        arxiv_id = title[-1].split('[')[0].strip().split('v')[0]
-        status = title[-1].split(']')[-1][:-1].strip().lower()
-        title = '  %d. ' % score + title[0][:-2]
-        if len(status) > 0:
-            title = title + ' [<font color="yellow">' + status + '</font>] '
-        href = ('''[<a href="https://arxiv.org/abs/%s">arXiv</a>,
-                <a href="https://arxiv.org/pdf/%s">PDF</a>,
-                <a href="https://ui.adsabs.harvard.edu/#abs/arXiv:%s">ADS</a>]
-                   ''' % (arxiv_id, arxiv_id, arxiv_id))
-        scores = ('''  &#9632; author: %d &#9632; title: %d &#9632; abstract:
-                  %d ''') % (int(score_list[0] * AUTHOR_SCORE),
-                                 int(score_list[1] * TITLE_SCORE),
-                                 int(score_list[2] * ABSTRACT_SCORE))
-        abstract = re.sub(r'\</p\>', '', entry['summary'].replace('\n', ' '))
-        abstract = re.sub(r'\<p\>', '', abstract)
-        abstract = '''<p style="margin-left: 40px; 
-                         margin-right: 50px; 
-                         width: 1000px; 
-                         border:3px; 
-                         border-style:solid; 
-                         border-color:#454545; 
-                         padding: 1em; 
-                         background-color:rgb(240, 240, 240)" 
-                         align="left" 
-                         class="big">
-                         <font face="arial">''' + entry['author'] + "<br><br>" + abstract + "<br><br>" + href + scores + '</font></p>'  # font
-        html = '\n<h2 style="margin-left: 40px; margin-right: 50px; background-color:DodgerBlue; display:inline-block; padding:1em; width: 1000px; color:white">' + title + '</h2>' + abstract + '\n'
+        # 用正则提取标题和arxiv id
+        match = re.match(r"^(.*)\s+\(arXiv:(\d+\.\d+)(?: \[.*\])?\)", entry['title'])
+        if match:
+            title_text = match.group(1)
+            arxiv_id = match.group(2)
+        else:
+            title_text = entry['title']
+            arxiv_id = ""
+        # 检查是否有 update/cross-list 等状态
+        status = ""
+        if "[" in entry['title']:
+            status = entry['title'].split("[")[-1].split("]")[0].lower()
+        if status and status not in arxiv_id:
+            title_text += f' <span class="badge bg-warning text-dark">{status}</span>'
+        links = f'''
+            <div class="arxiv-links mt-2">
+                <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/{arxiv_id}" target="_blank">arXiv</a>
+                <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/{arxiv_id}" target="_blank">PDF</a>
+                <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:{arxiv_id}" target="_blank">ADS</a>
+            </div>
+        '''
+        scores = f'''
+            <div class="arxiv-scores">
+                <span class="badge bg-info text-dark">Author: {int(score_list[0] * AUTHOR_SCORE)}</span>
+                <span class="badge bg-primary">Title: {int(score_list[1] * TITLE_SCORE)}</span>
+                <span class="badge bg-secondary">Abstract: {int(score_list[2] * ABSTRACT_SCORE)}</span>
+            </div>
+        '''
+        abstract = re.sub(r'</?p>', '', entry['summary'].replace('\n', ' '))
+        html = f'''
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">{score:.1f}. {title_text}</div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-2"><strong>{entry['author']}</strong></div>
+                <div>{abstract}</div>
+                {links}
+                {scores}
+            </div>
+        </div>
+        '''
         return (score, html)
 
     def run_daily_arXiv(self):
@@ -409,18 +421,55 @@ class arXiv(object):
         browser_cmd = "open"
         out_file_name = os.path.join(BASE, time.strftime("%Y%m%d") + ".html")
         f = open(out_file_name, "w")
-        f.write('<html xmlns="http://www.w3.org/1999/xhtml" lang="en"> \n')
-        f.write('<head><title>arXiv daily</title> \n' + MATHJAX + '</head>\n')
-        f.write('<body class="with-cu-identity"> \n')
-        f.write('<div id="footer"></div> \n')
-        f.write('<center><h1 style="margin-left: 40px; margin-right: 50px; background-color:SlateBlue; display:inline-block; padding:1em; width: 1000px; color:yellow">arXiv:' + time.strftime("%Y-%m-%d") +
-                '</h1>')
-        f.write('<div id="footer"></div> \n')
+        f.write('<html lang="en">\n')
+        f.write('''<head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>arXiv daily</title>
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+            <link href="https://fonts.googleapis.com/css?family=Roboto:400,700&display=swap" rel="stylesheet">
+            <style>
+                body { font-family: 'Roboto', Arial, sans-serif; background: #f8f9fa; transition: background 0.3s; }
+                .arxiv-card { margin: 2em auto; max-width: 900px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-radius: 16px; transition: box-shadow 0.3s, transform 0.3s; }
+                .arxiv-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.18); transform: translateY(-4px) scale(1.01);}
+                .arxiv-title { background: linear-gradient(90deg, #0d6efd 60%, #6610f2 100%); color: #fff; border-radius: 16px 16px 0 0; padding: 1.5em; font-size: 1.5em; font-weight: 700; letter-spacing: 0.5px;}
+                .arxiv-meta { font-size: 1em; color: #555; margin-bottom: 1em; }
+                .arxiv-abstract { background: #fff; padding: 1.5em; border-radius: 0 0 16px 16px; font-size: 1.1em; line-height: 1.7;}
+                .arxiv-links a { margin-right: 1em; }
+                .arxiv-scores { margin-top: 1em; font-size: 1em; }
+                .navbar { background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.04);}
+                .footer { text-align: center; color: #888; padding: 2em 0 1em 0; font-size: 0.95em;}
+                @media (prefers-color-scheme: dark) {
+                    body { background: #181a1b; color: #e4e6eb; }
+                    .arxiv-card { background: #23272b; box-shadow: 0 2px 8px rgba(0,0,0,0.28);}
+                    .arxiv-title { background: linear-gradient(90deg, #375a7f 60%, #6f42c1 100%);}
+                    .arxiv-abstract { background: #23272b; color: #e4e6eb;}
+                    .navbar { background: #23272b; color: #e4e6eb;}
+                }
+            </style>
+            ''' + MATHJAX + '</head>\n')
+        f.write('<body>\n')
+        f.write('''
+        <nav class="navbar navbar-expand-lg mb-4">
+            <div class="container">
+                <a class="navbar-brand fw-bold text-primary" href="#">arXiv Daily</a>
+                <span class="navbar-text">Modern arXiv Reader</span>
+            </div>
+        </nav>
+        ''')
+        f.write('<div class="container py-4">\n')
+        f.write('<header class="mb-4"><h1 class="display-5 text-center text-primary">arXiv:'
+                + time.strftime("%Y-%m-%d") + '</h1></header>\n')
         for s in idx:
             f.write(papers[s])
             count += 1
-        f.write('</center><div id="footer"></div> \n')
-        f.write('</body></html> \n')
+        f.write('</div>\n')
+        f.write('''
+        <footer class="footer">
+            &copy; {year} arXiv Daily · Powered by <a href="https://arxiv.org/" target="_blank">arXiv</a>
+        </footer>
+        '''.format(year=time.strftime("%Y")))
+        f.write('</body></html>\n')
         f.close()
         os.system(browser_cmd + " " + out_file_name)
         print('''\nIn total %d articles for your preview; please enjoy and have
