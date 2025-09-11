@@ -3,20 +3,9 @@ Utility functions for interacting with Large Language Models (LLMs).
 """
 import os
 import json
-import configparser
 import google.generativeai as genai
 from openai import OpenAI
-from config import CONFIG_FILE
-
-def get_llm_config():
-    """Loads LLM configuration from config.ini."""
-    config = configparser.ConfigParser()
-    if not os.path.exists(CONFIG_FILE):
-        return None
-    config.read(CONFIG_FILE)
-    if 'llm' not in config:
-        return None
-    return config['llm']
+from config import LLM_PROVIDER, LLM_API_KEY
 
 def query_llm(prompt, model_name, temperature=0.2, max_tokens=150, is_json=False):
     """
@@ -32,13 +21,8 @@ def query_llm(prompt, model_name, temperature=0.2, max_tokens=150, is_json=False
     Returns:
         str or dict: The LLM's response, or None if an error occurs.
     """
-    llm_config = get_llm_config()
-    if not llm_config:
-        print("Warning: [llm] section not found in config.ini. Cannot query LLM.")
-        return None
-
-    provider = llm_config.get('provider', 'openai').lower()
-    api_key = llm_config.get('api_key')
+    provider = LLM_PROVIDER.lower()
+    api_key = LLM_API_KEY
 
     if not api_key or 'YOUR' in api_key:
         print(f"Warning: LLM API key for '{provider}' not configured in config.ini.")
