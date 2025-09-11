@@ -24,12 +24,14 @@ AUTHOR_COLLAPSE_THRESHOLD = 10
 
 # --- arXiv API Configuration ---
 ARXIV_CATEGORIES = [
-    'astro-ph.CO', 
-    # 'gr-qc', 'hep-ph', 'physics.comp-ph', 'physics.data-an',
-    # 'physics.gen-ph', 'physics.hist-ph', 'physics.soc-ph', 'physics.pop-ph',
-    # 'math.HO', 'math.PR', 'math.ST', 
-    'stat',
-    'cs' # Computer Science (CoRR)
+    'astro-ph.CO', 'astro-ph.GA', 'astro-ph.EP',
+    'gr-qc', 'hep-ph', 
+    'physics.comp-ph', 'physics.data-an', 'physics.gen-ph', 
+    # 'physics.hist-ph', 'physics.soc-ph', 'physics.pop-ph',
+    'math.HO', 
+    'math.PR', 'math.ST', 
+    'stat.ML',
+    'cs.AI', # Computer Science (CoRR)
 ]
 
 # Maximum number of results to fetch from arXiv API in a single batch.

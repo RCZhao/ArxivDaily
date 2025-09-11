@@ -8,6 +8,7 @@ import sys
 import time
 import re
 import os
+import numpy as np
 
 from arxiv_engine import ArxivEngine
 from analyze_favorites import generate_daily_plot
@@ -50,7 +51,7 @@ function toggleAuthors(element) {
 </script>'''
 #---------------------------------------------------------------------
 
-def format_entry_to_html(index, item):
+def format_entry_to_html(index, item, cluster_names=None):
     """Formats a single scored paper item into an HTML card.
 
     Args:
@@ -64,6 +65,8 @@ def format_entry_to_html(index, item):
     score_list = item['score_list']
     tldr = item.get('tldr', '') # Safely get TLDR
     entry = item['entry']
+    cluster_id = item.get('cluster_id')
+    category = entry.get('category')
 
     # Use regex to extract title and arxiv id
     match = re.match(r"^(.*)\s+\(arXiv:(\d+\.\d+)(?:v\d+)?\)", entry['title'])
@@ -113,8 +116,16 @@ def format_entry_to_html(index, item):
             <span class="badge bg-success">Total Score: {score:.1f}</span>
             <span class="badge bg-info text-dark">Author Score: {score_list[0]:.2f}</span>
             <span class="badge bg-primary">Semantic Score: {score_list[1]:.2f}</span>
-        </div>
     '''
+    if category:
+        scores += f' <span class="badge bg-secondary">{category}</span>'
+    
+    if cluster_id is not None and cluster_names:
+        cluster_name = cluster_names[cluster_id] if cluster_id < len(cluster_names) else f"Cluster {cluster_id}"
+        # A purple-ish color for the interest cluster badge
+        scores += f' <span class="badge" style="background-color: #6f42c1; color: white;">Interest: {cluster_name}</span>'
+
+    scores += '</div>'
     # Clean abstract for display: remove HTML tags and normalize whitespace
     abstract = re.sub(r'<[^>]*>', '', entry['summary'])
     abstract = re.sub(r'\s+', ' ', abstract).strip()
@@ -139,7 +150,7 @@ def format_entry_to_html(index, item):
     return html
 
 
-def generate_page(recommended_papers, cluster_plot_path=None, word_cloud_path=None):
+def generate_page(recommended_papers, cluster_plot_path=None, word_cloud_path=None, cluster_names=None):
     """Generates and writes the final HTML page.
 
     This function creates the daily recommendation page, including an optional
@@ -230,7 +241,7 @@ def generate_page(recommended_papers, cluster_plot_path=None, word_cloud_path=No
                 + time.strftime("%Y-%m-%d") + '</h1></header>\n')
 
         for i, item in enumerate(recommended_papers, 1):
-            f.write(format_entry_to_html(i, item))
+            f.write(format_entry_to_html(i, item, cluster_names=cluster_names))
 
         f.write('</div>\n')
         f.write('''
@@ -270,14 +281,17 @@ if __name__ == '__main__':
 
         # Get daily recommendations
         print("\n--- Getting Daily Recommendations ---")
-        recommendations, rec_embeddings = recommender.get_recommendations(MAX_PAPERS_TO_SHOW, MIN_SCORE_THRESHOLD)
+        recommendations = recommender.get_recommendations(MAX_PAPERS_TO_SHOW, MIN_SCORE_THRESHOLD)
         
         # Generate the daily plot with recommendations
         daily_plot_path = None
+        cluster_names_for_page = None
         if recommendations:
             try:
-                # Pass only rec_embeddings as recommendations is not used
-                daily_plot_path = generate_daily_plot(rec_embeddings)
+                # Extract embeddings and labels for the plot
+                rec_embeddings = [item['embedding'] for item in recommendations]
+                rec_labels = [item['cluster_id'] for item in recommendations]
+                daily_plot_path, cluster_names_for_page = generate_daily_plot(rec_embeddings, rec_labels)
             except Exception as e:
                 print(f"Warning: Failed to generate daily cluster plot. Error: {e}")
         
@@ -289,4 +303,4 @@ if __name__ == '__main__':
             print("         Please run 'python arxiv_engine.py update' to generate it.")
         
         # Generate the final HTML page including analysis results
-        generate_page(recommendations, cluster_plot_path=final_cluster_plot, word_cloud_path=word_cloud)
+        generate_page(recommendations, cluster_plot_path=final_cluster_plot, word_cloud_path=word_cloud, cluster_names=cluster_names_for_page)

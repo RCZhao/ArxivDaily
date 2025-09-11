@@ -14,6 +14,7 @@ import configparser
 from datetime import datetime, timedelta, timezone
 import arxiv
 
+import torch
 from pyzotero import zotero
 import numpy as np
 from sentence_transformers import SentenceTransformer, util
@@ -121,7 +122,12 @@ class ArxivEngine(object):
         if self.mode == 'update':
             self.update_interest_model()
         
-        self.author_scores, self.interest_vector = self.load_score_files()
+        self.author_scores, self.interest_vectors = self.load_score_files()
+
+        # Ensure interest_vector is a tensor on the same device as the model
+        # to prevent device mismatch errors during similarity calculation.
+        if self.interest_vectors is not None:
+            self.interest_vectors = torch.from_numpy(np.array(self.interest_vectors)).to(self.model.device)
 
     def _load_config(self):
         """Loads configuration from config.ini."""
@@ -224,21 +230,37 @@ class ArxivEngine(object):
         - author.pickle: Contains scores for authors based on their frequency in the favorite papers.
         - interest_vector.pickle: A single vector representing the semantic center of the user's interests.
         """
-        # --- Step 1: Check for changes in Zotero library ---
-        last_version = -1
+        # --- Step 1: Check for changes in Zotero library or the engine script itself ---
+        last_zotero_version = -1
+        last_engine_mtime = -1
+        engine_filepath = os.path.abspath(__file__)
+        current_engine_mtime = os.path.getmtime(engine_filepath)
+
         if os.path.exists(CACHE_FILE):
             with open(CACHE_FILE, 'rb') as f:
-                cached_data = pickle.load(f)
-                last_version = cached_data.get('zotero_version', -1)
+                try:
+                    cached_data = pickle.load(f)
+                    last_zotero_version = cached_data.get('zotero_version', -1)
+                    last_engine_mtime = cached_data.get('engine_mtime', -1)
+                except (EOFError, pickle.UnpicklingError) as e:
+                    print(f"Warning: Cache file is corrupted, forcing update. Error: {e}")
         
         try:
-            current_version = self.zotero_client.last_modified_version()
-            if current_version == last_version:
-                print(f"Zotero library has not changed (version {current_version}). Skipping update.")
-                return
+            current_zotero_version = self.zotero_client.last_modified_version()
         except Exception as e:
             print(f"Warning: Could not check Zotero library version: {e}. Proceeding with full update.")
-            current_version = -1 # Force update if version check fails
+            current_zotero_version = -1 # Force update if version check fails
+
+        zotero_unchanged = (current_zotero_version == last_zotero_version) and (current_zotero_version != -1)
+        engine_unchanged = (current_engine_mtime == last_engine_mtime)
+
+        if zotero_unchanged and engine_unchanged:
+            print(f"Zotero library (v{current_zotero_version}) and arxiv_engine.py are unchanged. Skipping update.")
+            return
+        elif zotero_unchanged and not engine_unchanged:
+            print("arxiv_engine.py has been modified. Forcing an update of the interest model.")
+        elif not zotero_unchanged:
+            print(f"Zotero library has changed (v{last_zotero_version} -> v{current_zotero_version}). Updating interest model.")
 
         # --- Step 2: Fetch papers from API ---
         papers = self.get_favorite_papers_from_api()
@@ -267,24 +289,37 @@ class ArxivEngine(object):
             convert_to_tensor=False
         )
 
-        if len(favorite_embeddings) > 0:
-            interest_vector = np.mean(favorite_embeddings, axis=0)
-        else:
-            interest_vector = None
-
         # Run analysis before saving the model to get UMAP data
         print("\n--- Running Analysis of Favorite Papers ---")
         from analyze_favorites import run_analysis as run_favorites_analysis
         # Call with the new signature, passing data directly
         plot_path, wordcloud_path, reducer, reduced_embeddings, labels = run_favorites_analysis(papers, favorite_embeddings, n_clusters=None)
 
-        # --- Step 3: Save all results to a single cache file ---
+        # --- Step 3: Calculate interest vectors based on clusters ---
+        interest_vectors = []
+        if len(papers) > 0 and labels is not None:
+            n_clusters = len(np.unique(labels))
+            if n_clusters > 1:
+                print(f"\nCalculating interest vectors for {n_clusters} clusters...")
+                for i in range(n_clusters):
+                    cluster_indices = np.where(labels == i)[0]
+                    if len(cluster_indices) > 0:
+                        cluster_embeddings = favorite_embeddings[cluster_indices]
+                        cluster_centroid = np.mean(cluster_embeddings, axis=0)
+                        interest_vectors.append(cluster_centroid)
+                print(f"Generated {len(interest_vectors)} cluster interest vectors.")
+            elif len(favorite_embeddings) > 0: # single cluster or no clustering case
+                print("\nOnly one cluster found, using a single global interest vector.")
+                interest_vectors.append(np.mean(favorite_embeddings, axis=0))
+
+        # --- Step 4: Save all results to a single cache file ---
         print(f"Saving updated models to '{os.path.basename(CACHE_FILE)}'...")
         cache_data = {
-            'zotero_version': current_version,
+            'zotero_version': current_zotero_version,
             'papers': papers,
+            'engine_mtime': current_engine_mtime,
             'author_scores': author_scores,
-            'interest_vector': interest_vector,
+            'interest_vectors': interest_vectors,
             'embeddings': favorite_embeddings,
             'umap_reducer': reducer,
             'umap_embeddings_2d': reduced_embeddings,
@@ -306,8 +341,8 @@ class ArxivEngine(object):
         """Loads the author scores and the interest vector from pickle files.
 
         Returns:
-            tuple[dict, np.ndarray | None]: A tuple containing the author scores
-            dictionary and the interest vector numpy array. The interest vector
+            tuple[dict, list[np.ndarray] | None]: A tuple containing the author scores
+            dictionary and a list of interest vector numpy arrays. The list
             can be None if the file doesn't exist.
         """
         if os.path.exists(CACHE_FILE) and os.path.getsize(CACHE_FILE) > 0:
@@ -315,9 +350,15 @@ class ArxivEngine(object):
                 try:
                     cache_data = pickle.load(f)
                     author_scores = cache_data.get('author_scores', {})
-                    interest_vector = cache_data.get('interest_vector', None)
-                    # Note: We don't load 'papers' or 'embeddings' here as they are not needed for scoring.
-                    return author_scores, interest_vector
+                    interest_vectors = cache_data.get('interest_vectors', None)
+                    # For backward compatibility, if 'interest_vectors' is not present,
+                    # check for the old 'interest_vector' key.
+                    if interest_vectors is None:
+                        interest_vector = cache_data.get('interest_vector', None)
+                        if interest_vector is not None:
+                            print("Found legacy 'interest_vector'. Wrapping it in a list for compatibility.")
+                            interest_vectors = [interest_vector]
+                    return author_scores, interest_vectors
                 except (EOFError, pickle.UnpicklingError) as e:
                     print(f"Warning: Could not load cache file '{os.path.basename(CACHE_FILE)}'. It might be corrupted. Error: {e}")
         
@@ -346,13 +387,13 @@ class ArxivEngine(object):
             of the component scores [author_score, semantic_score].
         """
         if load_score:
-            author_scores, interest_vector = self.author_scores, self.interest_vector
+            author_scores, interest_vectors = self.author_scores, self.interest_vectors
         else:
-            author_scores, interest_vector = score_files
+            author_scores, interest_vectors = score_files
 
-        if interest_vector is None:
-            print("Interest vector not found. Please run with 'update' mode first.")
-            return 0.0, [0.0, 0.0]
+        if interest_vectors is None or len(interest_vectors) == 0:
+            print("Interest vector(s) not found. Please run with 'update' mode first.")
+            return 0.0, [0.0, 0.0], None, None
         content = self.get_content_from_entry(entry)
 
         # 1. Calculate Author Score
@@ -362,8 +403,12 @@ class ArxivEngine(object):
 
         # 2. Calculate Semantic Score
         text_to_embed = content['title'] + ' ' + content['abstract']
-        entry_embedding = self.model.encode(text_to_embed, convert_to_tensor=True)
-        semantic_score = util.cos_sim(interest_vector, entry_embedding).item()
+        entry_embedding = self.model.encode(text_to_embed, convert_to_tensor=True, device=self.model.device)
+        # Calculate similarities against all cluster vectors. The result is a tensor of similarities.
+        similarities = util.cos_sim(interest_vectors, entry_embedding)
+        # The final semantic score is the *maximum* similarity to any of the interest clusters.
+        semantic_score = torch.max(similarities).item()
+        cluster_id = torch.argmax(similarities).item()
 
         # 3. Combine scores
         total_score = (author_score * AUTHOR_WEIGHT) + (semantic_score * SEMANTIC_WEIGHT)
@@ -373,7 +418,7 @@ class ArxivEngine(object):
         if 'announce type: replace' in summary_lower or 'announce type: cross' in summary_lower:
             total_score *= 0.5
 
-        return total_score, [author_score, semantic_score], entry_embedding.cpu().numpy()
+        return total_score, [author_score, semantic_score], entry_embedding.cpu().numpy(), cluster_id
 
     def get_content_from_entry(self, entry=dict()):
         """Extracts and cleans content from a feedparser entry.
@@ -508,11 +553,14 @@ class ArxivEngine(object):
                 'link': result.entry_id,
                 'title': f"{result.title} (arXiv:{result.get_short_id()})",
                 'summary': result.summary,
-                'author': ', '.join(author.name for author in result.authors)
+                'author': ', '.join(author.name for author in result.authors),
+                'category': result.primary_category
             }
 
-            score, score_list, embedding = self.score_from_entry(entry, load_score=False, score_files=(self.author_scores, self.interest_vector))
-            scored_entries.append({'score': score, 'score_list': score_list, 'entry': entry, 'embedding': embedding})
+            score, score_list, embedding, cluster_id = self.score_from_entry(entry, load_score=False, score_files=(self.author_scores, self.interest_vectors))
+            if embedding is None: # If scoring failed, skip this paper
+                continue
+            scored_entries.append({'score': score, 'score_list': score_list, 'entry': entry, 'embedding': embedding, 'cluster_id': cluster_id})
 
         # --- Step 4: Filter, sort, and generate TLDRs ---
         # Sort entries by score in descending order
@@ -527,7 +575,6 @@ class ArxivEngine(object):
                 papers_to_process.append(item)
 
         papers_to_show = []
-        rec_embeddings = []
         # Now, generate TLDRs only for the selected papers, with a progress bar
         # Also printing the result to the terminal for debugging, as requested.
         if papers_to_process:
@@ -547,10 +594,9 @@ class ArxivEngine(object):
                 # print(f"\n  - TLDR for '{item['entry']['title'][:50]}...': {repr(tldr)}")
 
                 papers_to_show.append(item)
-                rec_embeddings.append(item['embedding'])
 
         print(f'\nIn total: {len(scored_entries)} entries, recommending top {len(papers_to_show)}\n')
-        return papers_to_show, rec_embeddings
+        return papers_to_show
 
 if __name__ == '__main__':
     # This block allows the script to be run directly to update the interest model.

@@ -95,9 +95,13 @@ def get_cluster_names(papers, labels, n_clusters):
 
     cluster_names = []
     for i in range(n_clusters):
-        row = tfidf_matrix.toarray()[i]
-        top_term_indices = row.argsort()[-3:][::-1]
-        top_terms = [feature_names[j] for j in top_term_indices if row[j] > 0]
+        # Get the i-th row (which is a sparse matrix itself) and convert only it to a dense array.
+        # This is much more memory-efficient than calling .toarray() on the whole matrix.
+        row_dense = tfidf_matrix.getrow(i).toarray().flatten()
+        # Get indices of the top 3 terms by score
+        top_term_indices = row_dense.argsort()[-3:][::-1]
+        # Filter out terms with a score of 0 and create the name
+        top_terms = [feature_names[j] for j in top_term_indices if row_dense[j] > 0]
         cluster_names.append(', '.join(top_terms) if top_terms else f"Cluster {i}")
             
     print("Generated names:", cluster_names)
@@ -249,19 +253,19 @@ def run_analysis(papers, embeddings, n_clusters=None):
 
     return plot_path, wordcloud_path, reducer, reduced_embeddings, labels
 
-def generate_daily_plot(rec_embeddings):
+def generate_daily_plot(rec_embeddings, rec_labels):
     """
     Generates a daily cluster plot that overlays new recommendations on the base
     cluster map of favorite papers.
     """
     print("\n--- Generating Daily Cluster Plot with Recommendations ---")
-    if not rec_embeddings:
-        print("Warning: No recommendation embeddings provided. Skipping daily map generation.")
-        return None
+    if not rec_embeddings or rec_labels is None:
+        print("Warning: No recommendation embeddings or labels provided. Skipping daily map generation.")
+        return None, None
 
     if not os.path.exists(CACHE_FILE):
         print("Cache file not found. Cannot generate daily plot.")
-        return None
+        return None, None
 
     try:
         with open(CACHE_FILE, 'rb') as f:
@@ -296,15 +300,27 @@ def generate_daily_plot(rec_embeddings):
         cmap='viridis', s=60, alpha=0.5
     )
 
-    # Plot new recommendations
-    rec_scatter = plt.scatter(
-        rec_embeddings_2d[:, 0], rec_embeddings_2d[:, 1], c='red', marker='*',
-        s=300, edgecolor='black', label='Today\'s Recommendations', zorder=10
-    )
+    # --- Plot new recommendations with different markers ---
+    markers = ['*', 's', '^', 'D', 'o', 'p', 'h']
+    rec_handles = []
 
-    # Annotate new recommendations with their rank
-    for i, pos in enumerate(rec_embeddings_2d):
-        plt.text(pos[0] + 0.05, pos[1] + 0.05, str(i + 1), color='black', fontsize=12, weight='bold', zorder=11)
+    # Plot each recommendation point individually to control marker and add annotation
+    for i, (pos, label) in enumerate(zip(rec_embeddings_2d, rec_labels), 1):
+        marker = markers[label % len(markers)]
+        plt.scatter(
+            pos[0], pos[1], c='red', marker=marker, s=300,
+            edgecolor='black', zorder=10
+        )
+        # Annotate with rank
+        plt.text(pos[0] + 0.05, pos[1] + 0.05, str(i), color='black', fontsize=12, weight='bold', zorder=11)
+
+    # Create legend handles for recommendations to avoid duplicates
+    unique_rec_labels = sorted(list(np.unique(rec_labels)))
+    for label in unique_rec_labels:
+        marker = markers[label % len(markers)]
+        cluster_name = cluster_names[label] if label < len(cluster_names) else f"Cluster {label}"
+        rec_handles.append(plt.Line2D([0], [0], marker=marker, color='w', label=f'Recs: {cluster_name}',
+                                      markerfacecolor='red', markeredgecolor='black', markersize=15))
 
     plt.title('Daily Recommendations on Favorite Papers Map', fontsize=20)
     plt.xlabel('UMAP Dimension 1', fontsize=14)
@@ -321,9 +337,9 @@ def generate_daily_plot(rec_embeddings):
         all_handles.extend(base_handles)
         all_labels.extend(cluster_names)
     
-    # Add handle and label for the recommendations
-    all_handles.append(rec_scatter)
-    all_labels.append('Today\'s Recommendations')
+    # Add handles and labels for the recommendations from different clusters
+    all_handles.extend(rec_handles)
+    all_labels.extend([h.get_label() for h in rec_handles])
 
     # Create the combined legend
     plt.legend(all_handles, all_labels, loc='best', title="Legend", fontsize=20, title_fontsize=22)
@@ -336,7 +352,7 @@ def generate_daily_plot(rec_embeddings):
     plt.savefig(plot_path, dpi=150, bbox_inches='tight')
     plt.close()
     print(f"Daily cluster plot saved to: {plot_path}")
-    return plot_path
+    return plot_path, cluster_names
 
 def main():
     """Main function to run the analysis pipeline as a standalone script."""
