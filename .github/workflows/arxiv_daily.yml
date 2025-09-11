@@ -12,8 +12,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          ref: main   # 如果你的主分支不是 main，请改为你的主分支名
 
       - name: Set up Python
         uses: actions/setup-python@v5
