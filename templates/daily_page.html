@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ page_title }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Roboto:400,700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Roboto', Arial, sans-serif; background: #f8f9fa; transition: background 0.3s; }
+        .arxiv-card { margin: 2em auto; max-width: 900px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-radius: 16px; transition: box-shadow 0.3s, transform 0.3s; }
+        .arxiv-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); transform: translateY(-1px); }
+        .arxiv-title { background: linear-gradient(90deg, #0d6efd 60%, #6610f2 100%); color: #fff; border-radius: 16px 16px 0 0; padding: 1.5em; font-size: 1.5em; font-weight: 700; letter-spacing: 0.5px;}
+        .arxiv-meta { font-size: 1em; color: #555; margin-bottom: 1em; }
+        .arxiv-abstract { background: #fff; padding: 1.5em; border-radius: 0 0 16px 16px; font-size: 1.1em; line-height: 1.7;}
+        .arxiv-links a { margin-right: 1em; }
+        .arxiv-scores { margin-top: 1em; font-size: 1em; }
+        .navbar { background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.04);}
+        .footer { text-align: center; color: #888; padding: 2em 0 1em 0; font-size: 0.95em;}
+        @media (prefers-color-scheme: dark) {
+            body { background: #181a1b; color: #e4e6eb; }
+            .arxiv-card { background: #23272b; box-shadow: 0 2px 8px rgba(0,0,0,0.28);}
+            .arxiv-card:hover { box-shadow: 0 5px 15px rgba(0,0,0,0.25); transform: translateY(-1px); }
+            .arxiv-title { background: linear-gradient(90deg, #375a7f 60%, #6f42c1 100%);}
+            .arxiv-abstract { background: #23272b; color: #e4e6eb;}
+            .navbar { background: #23272b; color: #e4e6eb;}
+            .text-muted { color: #adb5bd !important; }
+        }
+        /* Improved abstract readability */
+        .arxiv-abstract-text {
+            font-size: 1.1em;
+            line-height: 1.7;
+        }
+        p.big {
+            line-height: 1.6;
+            font-size: large;
+        }
+    </style>
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'] ],
+          processEscapes: true
+        }
+      });
+    </script>
+    <script>
+    function toggleAuthors(element) {
+        const fullList = element.querySelector('.author-full');
+        const shortList = element.querySelector('.author-short');
+        const toggleText = element.querySelector('.author-toggle');
+        
+        fullList.style.display = fullList.style.display === 'none' ? 'inline' : 'none';
+        shortList.style.display = shortList.style.display === 'none' ? 'inline' : 'none';
+        toggleText.textContent = fullList.style.display === 'none' ? ' (show all)' : ' (show less)';
+    }
+    </script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg mb-4">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-primary" href="#">arXiv Daily</a>
+            <span class="navbar-text">Modern arXiv Reader</span>
+        </div>
+    </nav>
+
+    {% if cluster_plot_path and word_cloud_path %}
+    <div class="container py-4">
+        <header class="mb-4"><h2 class="display-6 text-center">Analysis of Your Favorites</h2></header>
+        <div class="row align-items-center">
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header fw-bold">Interest Word Cloud</div>
+                    <div class="card-body text-center p-2">
+                        <img src="{{ word_cloud_path }}" class="img-fluid rounded" alt="Word Cloud of favorite paper topics">
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header fw-bold">Interest Clusters</div>
+                    <div class="card-body text-center p-2">
+                        <img src="{{ cluster_plot_path }}" class="img-fluid rounded" alt="2D Cluster plot of favorite papers">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="container py-4">
+        <header class="mb-4"><h1 class="display-5 text-center text-primary">arXiv: {{ current_date }}</h1></header>
+
+        {% if score_dist_plot_path %}
+        <div class="row justify-content-center">
+            <div class="col-lg-8 mb-4">
+                <div class="card">
+                    <div class="card-header fw-bold">Score Distribution of All Papers Found Today</div>
+                    <div class="card-body text-center p-2">
+                        <img src="{{ score_dist_plot_path }}" class="img-fluid rounded" alt="Score distribution of all papers found today">
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% for item in recommended_papers %}
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">{{ loop.index }}. {{ item.title_text }}
+                {% if item.status %}
+                    <span class="badge bg-warning text-dark">{{ item.status }}</span>
+                {% endif %}
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    {% set authors = item.authors %}
+                    {% if authors|length > author_collapse_threshold %}
+                        <div onclick="toggleAuthors(this)" style="cursor: pointer;">
+                            <strong>
+                                <span class="author-short">{{ authors[:author_collapse_threshold]|join(', ') }}, et al.</span>
+                                <span class="author-full" style="display: none;">{{ authors|join(', ') }}</span>
+                            </strong>
+                            <a class="author-toggle text-primary" style="text-decoration: none;"> (show all)</a>
+                        </div>
+                    {% else %}
+                        <strong>{{ authors|join(', ') }}</strong>
+                    {% endif %}
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> {{ item.tldr }}</p>
+                </div>
+                <div class="arxiv-abstract-text">{{ item.cleaned_summary }}</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/{{ item.arxiv_id }}" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/{{ item.arxiv_id }}" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:{{ item.arxiv_id }}" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: {{ "%.1f"|format(item.score) }}</span>
+                        <span class="badge bg-info text-dark">Author Score: {{ "%.2f"|format(item.score_list[0]) }}</span>
+                        <span class="badge bg-primary">Semantic Score: {{ "%.2f"|format(item.score_list[1]) }}</span>
+                        {% if item.primary_category %}
+                            <span class="badge bg-secondary">{{ item.primary_category }}</span>
+                        {% endif %}
+                        {% if item.cluster_id is not none and cluster_names and item.cluster_id < cluster_names|length %}
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: {{ cluster_names[item.cluster_id] }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <footer class="footer">
+        &copy; {{ current_year }} arXiv Daily · Powered by <a href="https://arxiv.org/" target="_blank">arXiv</a>
+    </footer>
+</body>
+</html>

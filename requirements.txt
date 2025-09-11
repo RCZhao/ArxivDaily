@@ -12,3 +12,6 @@ nltk
 tqdm
 sumy
 arxiv
+Jinja2
+openai
+google-generativeai

@@ -1,0 +1,67 @@
+[zotero]
+# Your Zotero user ID and API key are required to fetch your favorite papers.
+# You can find them at: https://www.zotero.org/settings/keys
+user_id = YOUR_ZOTERO_USER_ID
+api_key = YOUR_ZOTERO_API_KEY
+
+# (Optional) To focus on a specific collection, provide its ID.
+# To find your collection ID, go to your Zotero collection in the web library.
+# The URL will be something like: https://www.zotero.org/username/collections/XXXXXXXX
+# collection_id = XXXXXXXX
+
+[settings]
+# --- Recommendation Engine Configuration ---
+# Weights for combining author and semantic scores.
+author_weight = 5.0
+semantic_weight = 10.0
+
+# --- Page Generation Configuration ---
+# Maximum number of papers to show on the daily page.
+max_papers_to_show = 50
+# Minimum total score for a paper to be included.
+min_score_threshold = 3.0
+# Number of authors to show before collapsing the list with "et al.".
+author_collapse_threshold = 10
+
+# --- arXiv API Configuration ---
+# Maximum number of results to fetch from arXiv API in a single batch.
+# This should be large enough to cover a full day's publications.
+max_arxiv_results = 2000
+
+# arXiv categories to fetch papers from.
+# Separate categories with a newline.
+arxiv_categories =
+    astro-ph.CO
+    astro-ph.GA
+    astro-ph.EP
+    gr-qc
+    hep-ph
+    physics.comp-ph
+    physics.data-an
+    physics.gen-ph
+    math.HO
+    math.PR
+    math.ST
+    stat.ML
+    cs.AI
+    
+[llm]
+# (Optional) Configure a Large Language Model (LLM) for advanced features.
+# If an api_key is provided, the GitHub Actions workflow will automatically
+# enable all LLM features.
+# Supported providers: 'gemini', 'openai'
+provider = gemini
+api_key = YOUR_API_KEY
+# Model to use for all LLM tasks.
+# For Gemini, use a model like 'gemini-1.5-flash-latest'.
+# For OpenAI, use a model like 'gpt-4o-mini'.
+model = gemini-1.5-flash-latest
+
+[features]
+# Choose the method for generating TLDRs, cluster names, and word clouds.
+# Options: 'sumy' or 'llm' for TLDRs.
+# Options: 'tfidf' or 'llm' for cluster naming and word clouds.
+# To use LLM features, you must provide an API key in the [llm] section.
+tldr_generator = sumy
+cluster_naming_method = tfidf
+word_cloud_method = tfidf
