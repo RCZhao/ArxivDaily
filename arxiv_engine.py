@@ -6,16 +6,13 @@ papers from arXiv RSS feeds, and scoring them based on a combination of
 author preference and semantic similarity of the content.
 """
 import sys
-import time
 import pickle
 import os
 import re
-import configparser
-from datetime import datetime, timedelta, timezone
+import feedparser
 import arxiv
 
 import torch
-from pyzotero import zotero
 import numpy as np
 from sentence_transformers import SentenceTransformer, util
 from tqdm import tqdm
@@ -29,10 +26,96 @@ from sumy.nlp.stemmers import Stemmer
 from sumy.utils import get_stop_words
 
 from config import (
-    EMBEDDING_MODEL, CACHE_FILE, CONFIG_FILE,
-    AUTHOR_WEIGHT, SEMANTIC_WEIGHT, NLTK_DATA_PATH,
-    ARXIV_CATEGORIES, MAX_ARXIV_RESULTS
+    EMBEDDING_MODEL, CACHE_FILE, AUTHOR_WEIGHT, SEMANTIC_WEIGHT,
+    NLTK_DATA_PATH, ARXIV_CATEGORIES, MAX_ARXIV_RESULTS, TLDR_GENERATOR,
+    LLM_MODEL
 )
+from zotero_client import ZoteroClient
+from llm_utils import query_llm
+
+class ArxivPaper:
+    """Represents a single arXiv paper and its associated metadata and scores."""
+
+    # Create a translation table for cleaning text for embedding.
+    _PUNCTUATION_TO_REPLACE = '''$,'.()[]{}?!&*/\`~<>^%-+|"'''
+    _TRANSLATION_TABLE = str.maketrans(_PUNCTUATION_TO_REPLACE, ' ' * len(_PUNCTUATION_TO_REPLACE))
+
+    def __init__(self, arxiv_result):
+        """
+        Initializes an ArxivPaper object from an arxiv.Result object or a feedparser entry.
+
+        Args:
+            arxiv_result (arxiv.Result or dict): The paper data.
+        """
+        if isinstance(arxiv_result, arxiv.Result):
+            self.entry_id = arxiv_result.entry_id
+            self.raw_title = f"{arxiv_result.title} (arXiv:{arxiv_result.get_short_id()})"
+            self.raw_summary = arxiv_result.summary
+            self.authors = [author.name for author in arxiv_result.authors]
+            self.primary_category = arxiv_result.primary_category
+        else: # Handle feedparser-like dict for backward compatibility if needed
+            self.entry_id = arxiv_result.get('link', '')
+            self.raw_title = arxiv_result.get('title', '')
+            self.raw_summary = arxiv_result.get('summary', '')
+            self.authors = [a.strip() for a in arxiv_result.get('author', '').split(',')]
+            self.primary_category = arxiv_result.get('category', '')
+
+        # Processed data for display
+        self.arxiv_id = self._extract_arxiv_id()
+        self.title_text = self._extract_title_text()
+        self.status = self._determine_status()
+        self.cleaned_summary = ArxivPaper._clean_text(self.raw_summary, for_embedding=False)
+
+        # Processed data for embedding, stored on the object
+        self.title_for_embedding = ArxivPaper._clean_text(self.title_text, for_embedding=True)
+        self.summary_for_embedding = ArxivPaper._clean_text(self.raw_summary, for_embedding=True)
+
+        # Data to be filled in by the engine
+        self.tldr = ""
+        self.score = 0.0
+        self.score_list = [0.0, 0.0]
+        self.embedding = None
+        self.cluster_id = None
+
+    def _extract_arxiv_id(self):
+        match = re.search(r'(\d+\.\d+)', self.entry_id)
+        return match.group(1) if match else ""
+
+    def _extract_title_text(self):
+        match = re.match(r"^(.*)\s+\(arXiv:(\d+\.\d+)(?:v\d+)?\)", self.raw_title)
+        return match.group(1).strip() if match else self.raw_title.strip()
+
+    def _determine_status(self):
+        summary_lower = self.raw_summary.lower()
+        if 'announce type: replace' in summary_lower:
+            return 'replace'
+        elif 'announce type: cross' in summary_lower:
+            return 'cross-list'
+        return ''
+
+    @staticmethod
+    def _clean_text(text, for_embedding=False):
+        """
+        Cleans text for display or for embedding.
+
+        Args:
+            text (str): The input string.
+            for_embedding (bool): If True, applies cleaning specific for embedding
+                                  (lowercasing, punctuation removal).
+
+        Returns:
+            str: The cleaned text.
+        """
+        # Common cleaning: remove HTML tags and "Abstract:" prefix
+        cleaned_text = re.sub(r'<[^>]*>', '', text)
+        cleaned_text = re.sub(r'.*?Abstract:\s*', '', cleaned_text, count=1, flags=re.IGNORECASE | re.DOTALL)
+
+        if for_embedding:
+            cleaned_text = cleaned_text.lower()
+            cleaned_text = cleaned_text.translate(ArxivPaper._TRANSLATION_TABLE)
+
+        # Final whitespace normalization
+        return ' '.join(cleaned_text.split())
 
 def _initialize_nltk():
     """
@@ -109,9 +192,7 @@ class ArxivEngine(object):
                 Defaults to 'feed'.
         """
         self.mode = mode
-        self.config = self._load_config()
-        self.zotero_client = self._get_zotero_client()
-        self.favorite_papers = None # Cache for favorite papers
+        self.zotero_client = ZoteroClient()
 
         # Load the model once during initialization to be reused.
         # This is more efficient and avoids rate-limiting errors from HuggingFace.
@@ -122,105 +203,16 @@ class ArxivEngine(object):
         if self.mode == 'update':
             self.update_interest_model()
         
-        self.author_scores, self.interest_vectors = self.load_score_files()
+        self.author_scores, self.interest_vectors, self.interest_similarity_means, self.interest_similarity_stds = self.load_score_files()
 
         # Ensure interest_vector is a tensor on the same device as the model
         # to prevent device mismatch errors during similarity calculation.
         if self.interest_vectors is not None:
             self.interest_vectors = torch.from_numpy(np.array(self.interest_vectors)).to(self.model.device)
-
-    def _load_config(self):
-        """Loads configuration from config.ini."""
-        config = configparser.ConfigParser()
-        if not os.path.exists(CONFIG_FILE):
-            print("Warning: config.ini not found. Zotero integration will be disabled.")
-            return None
-        config.read(CONFIG_FILE)
-        return config
-
-    def _get_zotero_client(self):
-        """Initializes and returns a Zotero client if config is valid."""
-        if not self.config or 'zotero' not in self.config:
-            return None
-        
-        try:
-            user_id = self.config.get('zotero', 'user_id')
-            api_key = self.config.get('zotero', 'api_key')
-            if not user_id or not api_key or 'YOUR' in user_id or 'YOUR' in api_key:
-                raise ValueError("Zotero user_id or api_key is not set in config.ini")
-            return zotero.Zotero(user_id, 'user', api_key)
-        except (configparser.NoOptionError, configparser.NoSectionError, ValueError) as e:
-            print(f"Warning: Zotero config is incomplete or invalid in config.ini: {e}")
-            return None
-
-    def clean_text(self, text):
-        """Cleans a given text string by removing punctuation and extra spaces.
-
-        Args:
-            text (str): The input string to clean.
-
-        Returns:
-            str: The cleaned text.
-        """
-        for s in '''$,'.()[]{}?!&*/\`~<>^%-+|"''':
-            text = text.replace(s, ' ')
-        text = [x.strip() for x in text.split(' ') if len(x.strip()) > 0]
-        return ' '.join(text)
-
-    def get_favorite_papers_from_api(self):
-        """Fetches and caches favorite papers from the Zotero API."""
-        if self.favorite_papers is not None:
-            return self.favorite_papers
-
-        if not self.zotero_client:
-            print("Zotero client not configured. Cannot fetch favorite papers.")
-            self.favorite_papers = []
-            return self.favorite_papers
-
-        collection_id = self.config.get('zotero', 'collection_id', fallback=None)
-        
-        print(f"Fetching items from Zotero library...")
-        try:
-            if collection_id:
-                print(f"Using collection ID: {collection_id}")
-                items = self.zotero_client.collection_items(collection_id)
-            else:
-                print("Fetching all items from the library.")
-                items = self.zotero_client.everything(self.zotero_client.items())
-        except Exception as e:
-            print(f"Error fetching from Zotero API: {e}")
-            self.favorite_papers = []
-            return self.favorite_papers
-        
-        print(f"Found {len(items)} items in Zotero.")
-
-        papers = []
-        for item in items:
-            data = item.get('data', {})
-            # We are interested in journal articles, conference papers, preprints, etc.
-            if data.get('itemType') not in ['journalArticle', 'conferencePaper', 'preprint', 'report', 'thesis', 'bookSection', 'book']:
-                continue
-
-            title = data.get('title', '')
-            abstract = data.get('abstractNote', '')
-            
-            authors_list = []
-            creators = data.get('creators', [])
-            for creator in creators:
-                if creator.get('creatorType') == 'author':
-                    first_name = creator.get('firstName', '')
-                    last_name = creator.get('lastName', '')
-                    authors_list.append(f"{first_name} {last_name}".strip())
-            
-            if title and authors_list:
-                papers.append({
-                    'title': title,
-                    'abstract': abstract,
-                    'authors': authors_list
-                })
-        
-        self.favorite_papers = papers
-        return self.favorite_papers
+        if self.interest_similarity_means is not None:
+            self.interest_similarity_means = torch.from_numpy(np.array(self.interest_similarity_means)).to(self.model.device)
+        if self.interest_similarity_stds is not None:
+            self.interest_similarity_stds = torch.from_numpy(np.array(self.interest_similarity_stds)).to(self.model.device)
 
     def update_interest_model(self):
         """Updates the interest model based on a Zotero library.
@@ -235,6 +227,11 @@ class ArxivEngine(object):
         last_engine_mtime = -1
         engine_filepath = os.path.abspath(__file__)
         current_engine_mtime = os.path.getmtime(engine_filepath)
+        
+        cached_papers_map = {}
+        cached_embeddings_map = {}
+        old_papers_list = []
+        old_embeddings_list = []
 
         if os.path.exists(CACHE_FILE):
             with open(CACHE_FILE, 'rb') as f:
@@ -242,14 +239,18 @@ class ArxivEngine(object):
                     cached_data = pickle.load(f)
                     last_zotero_version = cached_data.get('zotero_version', -1)
                     last_engine_mtime = cached_data.get('engine_mtime', -1)
+                    old_papers_list = cached_data.get('papers', [])
+                    old_embeddings_list = cached_data.get('embeddings', [])
+                    if old_papers_list and len(old_papers_list) == len(old_embeddings_list):
+                        for paper, embedding in zip(old_papers_list, old_embeddings_list):
+                            # Ensure cache has the necessary keys for incremental updates
+                            if 'key' in paper and 'version' in paper:
+                                cached_papers_map[paper['key']] = paper
+                                cached_embeddings_map[paper['key']] = embedding
                 except (EOFError, pickle.UnpicklingError) as e:
-                    print(f"Warning: Cache file is corrupted, forcing update. Error: {e}")
+                    print(f"Warning: Cache file is corrupted, forcing full update. Error: {e}")
         
-        try:
-            current_zotero_version = self.zotero_client.last_modified_version()
-        except Exception as e:
-            print(f"Warning: Could not check Zotero library version: {e}. Proceeding with full update.")
-            current_zotero_version = -1 # Force update if version check fails
+        current_zotero_version = self.zotero_client.get_last_modified_version()
 
         zotero_unchanged = (current_zotero_version == last_zotero_version) and (current_zotero_version != -1)
         engine_unchanged = (current_engine_mtime == last_engine_mtime)
@@ -262,15 +263,48 @@ class ArxivEngine(object):
         elif not zotero_unchanged:
             print(f"Zotero library has changed (v{last_zotero_version} -> v{current_zotero_version}). Updating interest model.")
 
-        # --- Step 2: Fetch papers from API ---
-        papers = self.get_favorite_papers_from_api()
-
-        if not papers:
-            print("No papers loaded from Zotero. Aborting update.")
+        # --- Step 2: Fetch papers and identify new/modified ones ---
+        all_current_papers = self.zotero_client.get_favorite_papers()
+        if not all_current_papers:
+            print("No papers found in Zotero library. Aborting update.")
             return
-        author_scores = {}
-        texts_to_embed = []
 
+        texts_to_embed = []
+        paper_data_for_embedding = []
+        for paper in all_current_papers:
+            key = paper['key']
+            if key not in cached_papers_map or paper['version'] > cached_papers_map[key]['version']:
+                title_cleaned = ArxivPaper._clean_text(paper['title'], for_embedding=True)
+                abstract_cleaned = ArxivPaper._clean_text(paper['abstract'], for_embedding=True)
+                texts_to_embed.append(title_cleaned + ' ' + abstract_cleaned)
+                paper_data_for_embedding.append(paper)
+
+        # --- Step 3: Generate embeddings only for the delta ---
+        if texts_to_embed:
+            print(f"Found {len(texts_to_embed)} new or modified papers. Generating embeddings...")
+            new_embeddings = self.model.encode(
+                texts_to_embed, 
+                show_progress_bar=True, 
+                convert_to_tensor=False
+            )
+            # Update the embeddings map with the newly generated ones
+            for paper, embedding in zip(paper_data_for_embedding, new_embeddings):
+                cached_embeddings_map[paper['key']] = embedding
+        else:
+            print("Zotero library version changed, but no new or modified papers found. Re-analyzing existing data.")
+
+        # --- Step 4: Reconstruct full dataset and calculate author scores ---
+        papers = []
+        embeddings_list = []
+        for paper in all_current_papers:
+            key = paper['key']
+            if key in cached_embeddings_map:
+                papers.append(paper)
+                embeddings_list.append(cached_embeddings_map[key])
+        
+        favorite_embeddings = np.array(embeddings_list)
+
+        author_scores = {}
         print(f"Processing {len(papers)} papers from Zotero library...")
         for paper in papers:
             # Update author scores
@@ -278,24 +312,14 @@ class ArxivEngine(object):
             if num_authors > 0:
                 for author_name in paper['authors']:
                     author_scores[author_name] = author_scores.get(author_name, 0.0) + 1.0 / num_authors
-            
-            texts_to_embed.append(paper['title'] + ' ' + paper['abstract'])
-
-        # Create and store embeddings with a progress bar
-        print("Generating embeddings for interest model...")
-        favorite_embeddings = self.model.encode(
-            texts_to_embed, 
-            show_progress_bar=True, 
-            convert_to_tensor=False
-        )
 
         # Run analysis before saving the model to get UMAP data
         print("\n--- Running Analysis of Favorite Papers ---")
-        from analyze_favorites import run_analysis as run_favorites_analysis
+        from analysis import run_analysis as run_favorites_analysis
         # Call with the new signature, passing data directly
         plot_path, wordcloud_path, reducer, reduced_embeddings, labels = run_favorites_analysis(papers, favorite_embeddings, n_clusters=None)
 
-        # --- Step 3: Calculate interest vectors based on clusters ---
+        # --- Step 5: Calculate interest vectors based on clusters ---
         interest_vectors = []
         if len(papers) > 0 and labels is not None:
             n_clusters = len(np.unique(labels))
@@ -312,7 +336,31 @@ class ArxivEngine(object):
                 print("\nOnly one cluster found, using a single global interest vector.")
                 interest_vectors.append(np.mean(favorite_embeddings, axis=0))
 
-        # --- Step 4: Save all results to a single cache file ---
+        # --- Step 5b: Calculate dispersion for each interest cluster ---
+        interest_similarity_means = []
+        interest_similarity_stds = []
+        if interest_vectors:
+            print(f"Calculating dispersion for {len(interest_vectors)} clusters...")
+            for i, centroid_embedding in enumerate(interest_vectors):
+                cluster_indices = np.where(labels == i)[0]
+                if len(cluster_indices) > 1:
+                    cluster_embeddings = favorite_embeddings[cluster_indices]
+                    # Convert numpy arrays to tensors for util.cos_sim
+                    centroid_tensor = torch.from_numpy(centroid_embedding).unsqueeze(0)
+                    cluster_tensor = torch.from_numpy(cluster_embeddings)
+                    
+                    similarities = util.cos_sim(cluster_tensor, centroid_tensor).numpy().flatten()
+                    
+                    mean_sim = np.mean(similarities)
+                    std_sim = np.std(similarities)
+                    interest_similarity_means.append(mean_sim)
+                    # Use a floor value to prevent division by zero for very tight clusters
+                    interest_similarity_stds.append(max(std_sim, 1e-6))
+                else: # Single-paper cluster or case where labels might not align
+                    interest_similarity_means.append(1.0)
+                    interest_similarity_stds.append(1e-6) # Small std dev, low chance of being picked
+
+        # --- Step 6: Save all results to a single cache file ---
         print(f"Saving updated models to '{os.path.basename(CACHE_FILE)}'...")
         cache_data = {
             'zotero_version': current_zotero_version,
@@ -320,6 +368,8 @@ class ArxivEngine(object):
             'engine_mtime': current_engine_mtime,
             'author_scores': author_scores,
             'interest_vectors': interest_vectors,
+            'interest_similarity_means': interest_similarity_means,
+            'interest_similarity_stds': interest_similarity_stds,
             'embeddings': favorite_embeddings,
             'umap_reducer': reducer,
             'umap_embeddings_2d': reduced_embeddings,
@@ -341,9 +391,9 @@ class ArxivEngine(object):
         """Loads the author scores and the interest vector from pickle files.
 
         Returns:
-            tuple[dict, list[np.ndarray] | None]: A tuple containing the author scores
-            dictionary and a list of interest vector numpy arrays. The list
-            can be None if the file doesn't exist.
+            tuple: A tuple containing author_scores (dict), interest_vectors (list),
+            interest_similarity_means (list), and interest_similarity_stds (list).
+            Values can be None if the cache file doesn't exist.
         """
         if os.path.exists(CACHE_FILE) and os.path.getsize(CACHE_FILE) > 0:
             with open(CACHE_FILE, 'rb') as f:
@@ -358,15 +408,15 @@ class ArxivEngine(object):
                         if interest_vector is not None:
                             print("Found legacy 'interest_vector'. Wrapping it in a list for compatibility.")
                             interest_vectors = [interest_vector]
-                    return author_scores, interest_vectors
+                    interest_similarity_means = cache_data.get('interest_similarity_means', None)
+                    interest_similarity_stds = cache_data.get('interest_similarity_stds', None)
+                    return author_scores, interest_vectors, interest_similarity_means, interest_similarity_stds
                 except (EOFError, pickle.UnpicklingError) as e:
                     print(f"Warning: Could not load cache file '{os.path.basename(CACHE_FILE)}'. It might be corrupted. Error: {e}")
         
-        return {}, None
+        return {}, None, None, None
 
-    def score_from_entry(self, entry=dict(),
-                         load_score=True, score_files=(None, None),
-                         verbose=False):
+    def score_paper(self, paper, algorithm='z_score'):
         """Calculates a recommendation score for a given feedparser entry.
 
         The score is a weighted combination of an author score (based on the
@@ -375,87 +425,61 @@ class ArxivEngine(object):
         embedding and the user's interest vector).
 
         Args:
-            entry (dict, optional): A feedparser entry dictionary. Defaults to dict().
-            load_score (bool, optional): If True, loads score files from instance
-                attributes. If False, uses `score_files`. Defaults to True.
-            score_files (tuple, optional): A tuple containing (author_scores, interest_vector)
-                to use if `load_score` is False. Defaults to (None, None).
-            verbose (bool, optional): Unused in the current implementation. Defaults to False.
+            paper (ArxivPaper): The paper object to score.
+            algorithm (str, optional): The scoring algorithm to use, 'z_score' or
+                'max_similarity'. Defaults to 'z_score'.
 
         Returns:
             tuple[float, list[float]]: A tuple containing the total score and a list
             of the component scores [author_score, semantic_score].
         """
-        if load_score:
-            author_scores, interest_vectors = self.author_scores, self.interest_vectors
-        else:
-            author_scores, interest_vectors = score_files
+        author_scores, interest_vectors, means, stds = self.author_scores, self.interest_vectors, self.interest_similarity_means, self.interest_similarity_stds
 
         if interest_vectors is None or len(interest_vectors) == 0:
             print("Interest vector(s) not found. Please run with 'update' mode first.")
             return 0.0, [0.0, 0.0], None, None
-        content = self.get_content_from_entry(entry)
 
         # 1. Calculate Author Score
         author_score = 0.0
-        for author_name in content['author']:
+        for author_name in paper.authors:
             author_score += author_scores.get(author_name, 0.0)
 
         # 2. Calculate Semantic Score
-        text_to_embed = content['title'] + ' ' + content['abstract']
+        text_to_embed = paper.title_for_embedding + ' ' + paper.summary_for_embedding
         entry_embedding = self.model.encode(text_to_embed, convert_to_tensor=True, device=self.model.device)
         # Calculate similarities against all cluster vectors. The result is a tensor of similarities.
-        similarities = util.cos_sim(interest_vectors, entry_embedding)
-        # The final semantic score is the *maximum* similarity to any of the interest clusters.
-        semantic_score = torch.max(similarities).item()
-        cluster_id = torch.argmax(similarities).item()
+        similarities = util.cos_sim(interest_vectors, entry_embedding) # Shape: [num_clusters, 1]
+
+        # Choose algorithm for selecting the best cluster and its score
+        if algorithm == 'z_score' and means is not None and stds is not None:
+            if similarities.device != means.device:
+                means = means.to(similarities.device)
+            if similarities.device != stds.device:
+                stds = stds.to(similarities.device)
+            
+            z_scores = (similarities.squeeze() - means) / stds
+            cluster_id = torch.argmax(z_scores).item()
+            # Use the raw similarity from the best cluster for the final score
+            semantic_score = similarities[cluster_id].item()
+        else:
+            # Default to max_similarity if z_score is not possible or not chosen
+            if algorithm == 'z_score':
+                print("Warning: Dispersion data not found in cache. Falling back to 'max_similarity' algorithm. Run 'arxiv_engine.py update' to generate it.")
+            semantic_score = torch.max(similarities).item()
+            cluster_id = torch.argmax(similarities).item()
 
         # 3. Combine scores
         total_score = (author_score * AUTHOR_WEIGHT) + (semantic_score * SEMANTIC_WEIGHT)
 
         # Penalize replacements and cross-lists
-        summary_lower = entry['summary'].lower()
-        if 'announce type: replace' in summary_lower or 'announce type: cross' in summary_lower:
+        if paper.status in ['replace', 'cross-list']:
             total_score *= 0.5
 
         return total_score, [author_score, semantic_score], entry_embedding.cpu().numpy(), cluster_id
 
-    def get_content_from_entry(self, entry=dict()):
-        """Extracts and cleans content from a feedparser entry.
-
-        Args:
-            entry (dict, optional): A feedparser entry dictionary. Defaults to dict().
-
-        Returns:
-            dict: A dictionary with 'author', 'title', and 'abstract' keys.
-                  The author value is a dict of author names and their counts.
-        """
-        content = {'author' : dict(), 'title' : '', 'abstract' : ''}
-        # title
-        title = re.sub('\(.*?\)', '', entry['title'])[:-2].replace('\n', ' ')
-        content['title'] = self.clean_text(title.lower())
-        # abstract
-        abstract = re.sub(r'\<[^>]*\>', '', entry['summary']).replace('\n', ' ')
-        content['abstract'] = self.clean_text(abstract.lower())
-        # author
-        author = re.sub(r'\<[^>]*\>', '', entry['author'])  # rm '<...>'
-        author = author.split('et al')[0]  # trim
-        author = re.sub('\(.*?\)', '', author)  # rm affiliation
-        author = author.replace('\n', ' ').split(',')
-        author = [x.strip() for x in author]
-        for x in author:
-            content['author'][x] = content['author'].get(x, 0) + 1
-        return content
-
-    def _generate_tldr(self, text):
-        """Generates a one-sentence summary (TLDR) for a given text.
-        
-        This uses the Latent Semantic Analysis (LSA) summarizer from the 'sumy'
-        library to find the most significant sentence in the text.
-        """
+    def _generate_tldr_sumy(self, text):
+        """Generates a TLDR using the sumy library (LSA)."""
         try:
-            # Clean up text for the parser
-            text = re.sub(r'\s+', ' ', text).strip()
             if not text:
                 return "No abstract available."
 
@@ -474,129 +498,145 @@ class ArxivEngine(object):
                 # Fallback if no summary can be generated
                 return text[:250] + "..." if len(text) > 250 else text
         except Exception as e:
-            # Make the error message more visible during execution
             print(f"\n[ERROR] TLDR generation failed for a paper: {e}")
             return text[:250] + "..." if len(text) > 250 else text
 
-    def get_recommendations(self, max_papers, min_score):
-        """Fetches the latest daily papers using the arXiv API, scores them, and returns a sorted list.
+    def _generate_tldrs_batch_llm(self, papers, batch_size=10):
+        """
+        Generates TLDRs for a list of papers in batches using an LLM.
+        This is much more efficient than one call per paper and avoids rate limits.
+        """
+        print(f"Generating TLDRs for {len(papers)} papers in batches of {batch_size} using LLM...")
 
-        This method fetches a large batch of recent papers and filters them to include
-        only those published on the previous calendar day (UTC). It then scores
-        this daily set and returns the top recommendations.
+        for i in tqdm(range(0, len(papers), batch_size), desc="Processing TLDR Batches"):
+            batch = papers[i:i + batch_size]
+            
+            prompt_parts = [
+                "You are an expert academic assistant. Your task is to summarize multiple paper abstracts into a single, concise, and informative sentence for each.",
+                "Do not start with 'This paper' or 'The authors'.",
+                "Provide the output as a single JSON object, where each key is the paper's arXiv ID and the value is the one-sentence summary.",
+                "Here are the papers to summarize:"
+            ]
+            
+            for paper in batch:
+                prompt_parts.append(f"\n--- PAPER ---")
+                prompt_parts.append(f"ID: {paper.arxiv_id}")
+                prompt_parts.append(f"Abstract: \"{paper.cleaned_summary}\"")
+            
+            prompt = "\n".join(prompt_parts)
+            
+            try:
+                summaries = query_llm(prompt, model_name=LLM_MODEL, temperature=0.2, max_tokens=2000, is_json=True)
+                if summaries and isinstance(summaries, dict):
+                    for paper in batch:
+                        paper.tldr = summaries.get(paper.arxiv_id, "TLDR generation failed for this paper.")
+                else:
+                    raise ValueError("LLM did not return a valid JSON dictionary.")
+            except Exception as e:
+                print(f"\n[ERROR] LLM batch TLDR generation failed for batch starting at index {i}: {e}")
+                for paper in batch:
+                    paper.tldr = "TLDR generation failed due to an error."
+
+    def get_recommendations(self, max_papers, min_score, algorithm='z_score'):
+        """Fetches the latest daily papers using the arXiv RSS feed, scores them, and returns a sorted list.
+
+        This method uses the efficient two-step process:
+        1. Fetch a list of *new* and *cross-listed* paper IDs from the latest arXiv RSS feed.
+        2. Fetch the full details for only those IDs using the arXiv API.
 
         Args:
             max_papers (int): The maximum number of papers to return.
             min_score (float): The minimum score a paper must have to be included.
+            algorithm (str): The scoring algorithm to use ('z_score' or 'max_similarity').
 
         Returns:
-            list[dict]: A list of recommended paper items, where each item is a dictionary
-            containing the score, score components, and the original entry data.
+            tuple[list[dict], list[dict]]: A tuple containing the list of recommended papers
+            and the list of all scored papers.
         """
-        # --- Step 1: Fetch a batch of recent papers from arXiv API ---
-        print("Fetching recent papers from arXiv API...")
+        # --- Step 1: Fetch daily paper IDs from arXiv RSS feed ---
+        print("Fetching daily paper IDs from arXiv RSS feed...")
 
-        # As suggested, use a configured client for more robust fetching.
-        client = arxiv.Client(
-            page_size=5000,
-            delay_seconds=2,
-            num_retries=20
-        )
-
-        query = " OR ".join(f"cat:{cat}" for cat in ARXIV_CATEGORIES)
-        search = arxiv.Search(
-            query=query,
-            max_results=MAX_ARXIV_RESULTS, # Fetch a large batch to ensure we get all of today's papers
-            sort_by=arxiv.SortCriterion.SubmittedDate,
-            sort_order=arxiv.SortOrder.Descending
-        )
-
-        # --- Step 2: Filter for papers published on the target date ---
-        # Target date is "yesterday" UTC, as the script typically runs early in the morning.
-        target_date = (datetime.now(timezone.utc) - timedelta(days=1)).date()
-        print(f"Filtering for papers published on {target_date}...")
-
-        papers_to_score = []
-        processed_ids = set()
-
-        results_iterator = client.results(search)
-        try:
-            for result in tqdm(results_iterator, desc="Filtering new papers"):
-                try:
-                    if result.entry_id in processed_ids:
-                        continue
-
-                    # 'updated' is the date of the last version. For new papers, it's the publication date.
-                    if result.updated.date() == target_date:
-                        processed_ids.add(result.entry_id)
-                        papers_to_score.append(result)
-                except Exception as e_inner:
-                    # This handles errors for a single problematic paper entry, allowing the loop to continue.
-                    print(f"\nWarning: Skipping a paper due to a processing error: {e_inner}")
-                    continue
-        except arxiv.UnexpectedEmptyPageError as e:
-            # This can happen if we ask for more results than the API can provide.
-            # We can safely ignore it and proceed with the papers we've already collected.
-            print(f"\nWarning: Hit the end of arXiv results unexpectedly. Proceeding with {len(papers_to_score)} papers. (Error: {e})")
-
-        if not papers_to_score:
-            print(f"No new papers found for {target_date}. Exiting.")
+        # The RSS feed uses '+' as a separator for OR logic
+        # The correct format is to join categories with a '+' and without the 'cat:' prefix.
+        # e.g., 'astro-ph.CO+astro-ph.GA'
+        query = "+".join(ARXIV_CATEGORIES)
+        rss_url = f"https://rss.arxiv.org/atom/{query}"
+        
+        # Use feedparser directly to fetch the RSS feed, as per the reference implementation.
+        feed = feedparser.parse(rss_url)
+        
+        if feed.bozo:
+            exception_info = feed.get('bozo_exception', 'The feed is malformed.')
+            print(f"Error: Could not parse arXiv RSS feed. Error: {exception_info}")
+            print("Aborting recommendation generation.")
+            return []
+        
+        if 'Feed error for query' in feed.feed.title:
+            print(f"Error: arXiv returned a feed error for the query '{query}'. Please check ARXIV_CATEGORIES in config.py.")
+            print("Aborting recommendation generation.")
             return []
 
-        # --- Step 3: Score the filtered papers ---
-        print(f"Found {len(papers_to_score)} new papers from {target_date}. Now scoring them...")
-        scored_entries = []
-        for result in tqdm(papers_to_score, desc="Scoring Papers"):
-            # Convert arxiv.Result to a dict that mimics the old feedparser entry
-            # to minimize changes in downstream functions.
-            entry = {
-                'link': result.entry_id,
-                'title': f"{result.title} (arXiv:{result.get_short_id()})",
-                'summary': result.summary,
-                'author': ', '.join(author.name for author in result.authors),
-                'category': result.primary_category
-            }
+        # Filter for 'new' announcements only, to strictly follow the reference implementation.
+        paper_ids = []
+        for entry in tqdm(feed.entries):
+            # The 'arxiv_announce_type' is a custom tag in the arXiv RSS feed.
+            announce_type = getattr(entry, 'arxiv_announce_type', None)
+            if announce_type == 'new':
+                # Extract ID from 'http://arxiv.org/abs/2401.12345v1' or 'oai:arXiv.org:2401.12345v1' -> '2401.12345'
+                match = re.search(r'(\d+\.\d+)', entry.id)
+                if match:
+                    paper_ids.append(match.group(1))
 
-            score, score_list, embedding, cluster_id = self.score_from_entry(entry, load_score=False, score_files=(self.author_scores, self.interest_vectors))
-            if embedding is None: # If scoring failed, skip this paper
+        if not paper_ids:
+            print("No new papers found in the RSS feed for today's announcement. Exiting.")
+            return []
+
+        # --- Step 2: Fetch full paper details using the arxiv library in batches ---
+        print(f"Found {len(paper_ids)} new papers. Fetching full details...")
+        client = arxiv.Client(page_size=100, delay_seconds=3, num_retries=5)
+        
+        # The arxiv library can handle a large id_list and will paginate internally.
+        search = arxiv.Search(id_list=paper_ids, sort_by=arxiv.SortCriterion.SubmittedDate)
+        
+        # Create ArxivPaper objects from the fetched results
+        papers_to_score = [ArxivPaper(result) for result in tqdm(client.results(search), total=len(paper_ids), desc="Fetching details")]
+
+        # --- Step 3: Score the fetched papers ---
+        print(f"Scoring {len(papers_to_score)} new papers...")
+        scored_papers = []
+        for paper in tqdm(papers_to_score, desc="Scoring Papers"):
+            score, score_list, embedding, cluster_id = self.score_paper(paper, algorithm=algorithm)
+            if embedding is None: # score_paper might fail
                 continue
-            scored_entries.append({'score': score, 'score_list': score_list, 'entry': entry, 'embedding': embedding, 'cluster_id': cluster_id})
+            paper.score = score
+            paper.score_list = score_list
+            paper.embedding = embedding
+            paper.cluster_id = cluster_id
+            scored_papers.append(paper)
 
         # --- Step 4: Filter, sort, and generate TLDRs ---
-        # Sort entries by score in descending order
-        sorted_entries = sorted(scored_entries, key=lambda x: x['score'], reverse=True)
+        sorted_papers = sorted(scored_papers, key=lambda p: p.score, reverse=True)
 
-        # First, select the top papers that meet the threshold
         papers_to_process = []
-        for item in sorted_entries:
+        for paper in sorted_papers:
             if len(papers_to_process) >= max_papers:
                 break
-            if item['score'] >= min_score:
-                papers_to_process.append(item)
+            if paper.score >= min_score:
+                papers_to_process.append(paper)
 
         papers_to_show = []
-        # Now, generate TLDRs only for the selected papers, with a progress bar
-        # Also printing the result to the terminal for debugging, as requested.
         if papers_to_process:
             print("\n--- Generating TLDRs for top papers ---")
-            for item in tqdm(papers_to_process, desc="Generating TLDRs"):
-                # Clean the summary text before generating TLDR
-                summary_text = re.sub(r'<[^>]*>', '', item['entry']['summary'])
-                summary_text = re.sub(r'\s+', ' ', summary_text).strip()
-                # Defensively remove any "Abstract: " or similar prefixes that might have been added
-                # to ensure the summarizer receives clean text.
-                # This finds the first instance of "Abstract: " and takes everything after it.
-                summary_text = re.sub(r'.*?Abstract:\s*', '', summary_text, count=1, flags=re.IGNORECASE | re.DOTALL).strip()
-                tldr = self._generate_tldr(summary_text)
-                item['tldr'] = tldr
+            if TLDR_GENERATOR == 'llm':
+                self._generate_tldrs_batch_llm(papers_to_process)
+                papers_to_show = papers_to_process
+            else: # 'sumy' or other classic methods
+                for paper in tqdm(papers_to_process, desc="Generating TLDRs"):
+                    paper.tldr = self._generate_tldr_sumy(paper.cleaned_summary)
+                    papers_to_show.append(paper)
 
-                # # Print the generated TLDR for debugging. Using repr() to show any special characters.
-                # print(f"\n  - TLDR for '{item['entry']['title'][:50]}...': {repr(tldr)}")
-
-                papers_to_show.append(item)
-
-        print(f'\nIn total: {len(scored_entries)} entries, recommending top {len(papers_to_show)}\n')
-        return papers_to_show
+        print(f'\nIn total: {len(scored_papers)} entries, recommending top {len(papers_to_show)}\n')
+        return papers_to_show, sorted_papers
 
 if __name__ == '__main__':
     # This block allows the script to be run directly to update the interest model.

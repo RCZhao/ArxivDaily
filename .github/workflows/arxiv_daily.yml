@@ -32,6 +32,22 @@ jobs:
           ZOTERO_USER_ID: ${{ secrets.ZOTERO_USER_ID }}
           ZOTERO_API_KEY: ${{ secrets.ZOTERO_API_KEY }}
 
+      - name: Create LLM config file
+        run: |
+          if [ -n "${{ secrets.LLM_API_KEY }}" ]; then
+            echo "[llm]" >> config.ini
+            echo "api_key = ${{ secrets.LLM_API_KEY }}" >> config.ini
+            echo "" >> config.ini
+            echo "[features]" >> config.ini
+            echo "tldr_generator = llm" >> config.ini
+            echo "cluster_naming_method = llm" >> config.ini
+            echo "word_cloud_method = llm" >> config.ini
+          else
+            echo "LLM_API_KEY not found. Using classic features (sumy, tfidf)." 
+          fi
+        env:
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+
       - name: Cache arxiv_cache.pickle
         id: cache-arxiv
         uses: actions/cache@v4

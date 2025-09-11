@@ -1,16 +1,15 @@
 """
-A tool for analyzing and visualizing your favorite arXiv papers.
+A tool for analyzing and visualizing arXiv papers.
 
-This script performs a clustering analysis on the papers in your Zotero
-library. It generates two main outputs in the
-'analysis_results' directory:
-1. A 2D visualization of the paper clusters (cluster_visualization.png).
-2. A word cloud of the most frequent terms (word_cloud.png).
+This script contains functions for:
+- Clustering favorite papers from a Zotero library.
+- Generating visualizations like cluster maps and word clouds.
+- Plotting score distributions for daily papers.
 
 Usage:
-    python analyze_favorites.py [number_of_clusters]
+    python analysis.py [number_of_clusters]
 Example:
-    python analyze_favorites.py 7
+    python analysis.py 7
 """
 import os
 import sys
@@ -26,7 +25,11 @@ from wordcloud import WordCloud
 
 # Add the project root to the path to allow importing arxiv_engine
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from config import BASE, CACHE_FILE, ANALYSIS_OUTPUT_DIR
+from config import (
+    BASE, CACHE_FILE, ANALYSIS_OUTPUT_DIR, CLUSTER_NAMING_METHOD, WORD_CLOUD_METHOD,
+    LLM_MODEL
+)
+from llm_utils import query_llm
 
 # --- Constants ---
 # Define custom stopwords to be used by both TF-IDF and WordCloud for consistency.
@@ -69,6 +72,52 @@ def load_and_process_papers():
     return papers, embeddings
 
 def get_cluster_names(papers, labels, n_clusters):
+    """
+    Generates meaningful names for each cluster. Dispatches to the appropriate method.
+
+    Args:
+        papers (list[dict]): A list of paper dictionaries.
+        labels (np.ndarray): The cluster label for each paper.
+        n_clusters (int): The total number of clusters.
+
+    Returns:
+        list[str]: A list of generated names for each cluster.
+    """
+    if CLUSTER_NAMING_METHOD == 'llm' and n_clusters > 1:
+        names = get_cluster_names_llm(papers, labels, n_clusters)
+        if names:  # Fallback if LLM fails
+            return names
+        print("Warning: LLM cluster naming failed. Falling back to TF-IDF method.")
+
+    return get_cluster_names_tfidf(papers, labels, n_clusters)
+
+def get_cluster_names_llm(papers, labels, n_clusters):
+    """Generates cluster names using an LLM."""
+    print("Generating meaningful cluster names using LLM...")
+    cluster_texts = ['' for _ in range(n_clusters)]
+    for i, paper in enumerate(papers):
+        cluster_texts[labels[i]] += f"Title: {paper['title']}\nAbstract: {paper['abstract'][:500]}...\n\n"
+
+    cluster_names = []
+    for i in range(n_clusters):
+        if not cluster_texts[i]:
+            cluster_names.append(f"Cluster {i} (empty)")
+            continue
+        
+        text_for_prompt = cluster_texts[i][:8000]
+        prompt = (
+            "You are an expert research scientist. Based on the following paper titles and abstracts, "
+            "generate a short, descriptive name for this research cluster. The name should be 2-4 keywords "
+            "that capture the main theme. Return the name as a single string, with keywords separated by commas. "
+            "Example: 'dark matter, simulation, halos'.\n\n"
+            f"--- PAPERS ---\n{text_for_prompt}"
+        )
+        name = query_llm(prompt, model_name=LLM_MODEL, temperature=0.1, max_tokens=20)
+        cluster_names.append(name.strip().replace('"', '') if name else f"Cluster {i}")
+    print("Generated names (LLM):", cluster_names)
+    return cluster_names
+
+def get_cluster_names_tfidf(papers, labels, n_clusters):
     """
     Generates meaningful names for each cluster based on TF-IDF of paper content.
 
@@ -148,6 +197,51 @@ def plot_clusters(reduced_embeddings, labels, n_clusters, cluster_names):
 
 def generate_word_cloud(papers):
     """
+    Generates and saves a word cloud. Dispatches to the appropriate method.
+    """
+    if WORD_CLOUD_METHOD == 'llm':
+        path = generate_word_cloud_llm(papers)
+        if path:  # Fallback if LLM fails
+            return path
+        print("Warning: LLM word cloud generation failed. Falling back to TF-IDF method.")
+    
+    return generate_word_cloud_tfidf(papers)
+
+def generate_word_cloud_llm(papers):
+    """Generates a word cloud using keywords and weights from an LLM."""
+    print("Generating word cloud using LLM...")
+    text = ' '.join([p['title'] + ' ' + p['abstract'] for p in papers])
+    text_for_prompt = text[:12000]
+
+    prompt = (
+        "Analyze the following collection of academic paper abstracts. Extract the 50 most important "
+        "and frequent technical keywords and concepts. Return the result as a single JSON object where "
+        "keys are the keywords (as strings) and values are their relative importance scores (as integers from 1 to 100).\n\n"
+        f"--- ABSTRACTS ---\n{text_for_prompt}"
+    )
+
+    frequencies = query_llm(prompt, model_name=LLM_MODEL, temperature=0.1, max_tokens=1000, is_json=True)
+    if not frequencies or not isinstance(frequencies, dict):
+        print("Error: LLM did not return a valid JSON dictionary for word cloud.")
+        return None
+
+    stopwords = set(ENGLISH_STOP_WORDS).union(CUSTOM_STOPWORDS)
+    wordcloud = WordCloud(
+        width=1600, height=1000, background_color='white',
+        stopwords=stopwords, collocations=False, colormap='viridis'
+    ).generate_from_frequencies(frequencies)
+
+    plt.figure(figsize=(16, 10)); plt.title('Favorite Papers Word Cloud (LLM-Generated)', fontsize=20)
+    plt.imshow(wordcloud, interpolation='bilinear'); plt.axis('off')
+    
+    wordcloud_path = os.path.join(ANALYSIS_OUTPUT_DIR, 'word_cloud.png')
+    if not os.path.exists(ANALYSIS_OUTPUT_DIR): os.makedirs(ANALYSIS_OUTPUT_DIR)
+    plt.savefig(wordcloud_path, dpi=150, bbox_inches='tight'); plt.close()
+    print(f"Word cloud (LLM) saved to: {wordcloud_path}")
+    return wordcloud_path
+
+def generate_word_cloud_tfidf(papers):
+    """
     Generates and saves a word cloud from the text of all favorite papers.
 
     Args:
@@ -177,6 +271,46 @@ def generate_word_cloud(papers):
     plt.close()
     print(f"Word cloud saved to: {wordcloud_path}")
     return wordcloud_path
+
+def generate_score_distribution_plot(all_scored_papers, min_score_threshold):
+    """
+    Generates and saves a histogram of the scores of all papers found.
+
+    Args:
+        all_scored_papers (list[ArxivPaper]): A list of all scored paper items.
+        min_score_threshold (float): The score threshold for recommendations.
+
+    Returns:
+        str: The path to the saved plot image, or None if no papers were scored.
+    """
+    if not all_scored_papers:
+        return None
+
+    scores = [paper.score for paper in all_scored_papers]
+    
+    print("Generating score distribution plot...")
+    plt.figure(figsize=(12, 7))
+    plt.hist(scores, bins=50, color='skyblue', edgecolor='black', alpha=0.7, label=f'All {len(scores)} Papers')
+    
+    plt.axvline(min_score_threshold, color='r', linestyle='--', linewidth=2, 
+                label=f'Min Score Threshold: {min_score_threshold:.1f}')
+    
+    plt.xlabel('Recommendation Score', fontsize=14)
+    plt.ylabel('Number of Papers', fontsize=14)
+    plt.title('Distribution of Daily Paper Scores', fontsize=16)
+    plt.legend(fontsize=12)
+    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.yscale('log')
+    plt.tight_layout()
+
+    if not os.path.exists(ANALYSIS_OUTPUT_DIR):
+        os.makedirs(ANALYSIS_OUTPUT_DIR)
+    
+    plot_path = os.path.join(ANALYSIS_OUTPUT_DIR, 'score_distribution.png')
+    plt.savefig(plot_path, dpi=150, bbox_inches='tight')
+    plt.close()
+    print(f"Score distribution plot saved to: {plot_path}")
+    return plot_path
 
 def run_analysis(papers, embeddings, n_clusters=None):
     """
