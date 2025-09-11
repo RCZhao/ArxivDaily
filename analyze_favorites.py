@@ -20,23 +20,28 @@ import matplotlib.pyplot as plt
 import umap.umap_ as umap
 from sklearn.cluster import KMeans
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 from sklearn.metrics import silhouette_score
-from wordcloud import WordCloud, STOPWORDS
+from wordcloud import WordCloud
 
 # Add the project root to the path to allow importing arxiv_engine
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from arxiv_engine import ArxivEngine
 from config import BASE, CACHE_FILE, ANALYSIS_OUTPUT_DIR
 
 # --- Constants ---
+# Define custom stopwords to be used by both TF-IDF and WordCloud for consistency.
+CUSTOM_STOPWORDS = {
+    "paper", "study", "results", "show", "model", "based", "using", "propose",
+    "method", "approach", "data", "analysis", "figure", "table", "et", "al",
+    "fig", "also", "however", "therefore", "provide", "present", "shown",
+    "within", "different", "can", "due", "may", "well", "new", "large", "high"
+}
 
-def load_and_process_papers(engine):
+
+def load_and_process_papers():
     """
     Loads favorite papers from the local cache and generates embeddings.
     The cache is created by running `python arxiv_engine.py update`.
-
-    Args:
-        engine (ArxivEngine): An instance of the ArxivEngine.
 
     Returns:
         tuple: A tuple containing:
@@ -80,14 +85,9 @@ def get_cluster_names(papers, labels, n_clusters):
     for i, paper in enumerate(papers):
         cluster_texts[labels[i]] += paper['title'] + ' ' + paper['abstract'] + ' '
 
-    # Use the same stopwords as the word cloud for consistency, plus some more
-    stopwords = set(STOPWORDS)
-    stopwords.update([
-        "paper", "study", "results", "show", "model", "based", "using", "propose",
-        "method", "approach", "data", "analysis", "figure", "table", "et", "al",
-        "fig", "also", "however", "therefore", "provide", "present", "shown",
-        "within", "different", "can", "due", "may", "well", "new", "large", "high"
-    ])
+    # Use scikit-learn's built-in English stop words and add our custom ones.
+    # This is more robust and avoids the UserWarning.
+    stopwords = set(ENGLISH_STOP_WORDS).union(CUSTOM_STOPWORDS)
 
     vectorizer = TfidfVectorizer(max_features=1000, stop_words=list(stopwords), ngram_range=(1, 2))
     tfidf_matrix = vectorizer.fit_transform(cluster_texts)
@@ -114,7 +114,7 @@ def plot_clusters(reduced_embeddings, labels, n_clusters, cluster_names):
         cluster_names (list[str]): The generated meaningful names for the clusters.
     """
     print("Generating cluster plot...")
-    plt.figure(figsize=(16, 12))
+    plt.figure(figsize=(16, 10))
     scatter = plt.scatter(
         reduced_embeddings[:, 0],
         reduced_embeddings[:, 1],
@@ -131,13 +131,14 @@ def plot_clusters(reduced_embeddings, labels, n_clusters, cluster_names):
     
     if n_clusters > 1:
         legend_elements = scatter.legend_elements()
-        plt.legend(legend_elements[0], cluster_names, title="Clusters", fontsize=12)
+        plt.legend(legend_elements[0], cluster_names, loc='best', title="Clusters", fontsize=20, title_fontsize=22)
 
     if not os.path.exists(ANALYSIS_OUTPUT_DIR):
         os.makedirs(ANALYSIS_OUTPUT_DIR)
     
     plot_path = os.path.join(ANALYSIS_OUTPUT_DIR, 'cluster_visualization.png')
     plt.savefig(plot_path, dpi=150, bbox_inches='tight')
+    plt.close()
     print(f"Cluster plot saved to: {plot_path}")
     return plot_path
 
@@ -151,19 +152,16 @@ def generate_word_cloud(papers):
     print("Generating word cloud...")
     text = ' '.join([p['title'] + ' ' + p['abstract'] for p in papers])
     
-    stopwords = set(STOPWORDS)
-    stopwords.update([
-        "paper", "study", "results", "show", "model", "based", "using", "propose",
-        "method", "approach", "data", "analysis", "figure", "table", "et", "al", "fig",
-        "also", "however", "therefore", "propose", "provide", "present", "shown"
-    ])
+    # Use scikit-learn's built-in English stop words and add our custom ones for consistency.
+    stopwords = set(ENGLISH_STOP_WORDS).union(CUSTOM_STOPWORDS)
 
     wordcloud = WordCloud(
-        width=1600, height=800, background_color='white',
+        width=1600, height=1000, background_color='white', # Aspect ratio matches figsize
         stopwords=stopwords, collocations=False, colormap='viridis'
     ).generate(text)
 
-    plt.figure(figsize=(20, 10))
+    plt.figure(figsize=(16, 10))
+    plt.title('Favorite Papers Word Cloud', fontsize=20)
     plt.imshow(wordcloud, interpolation='bilinear')
     plt.axis('off')
     
@@ -172,25 +170,26 @@ def generate_word_cloud(papers):
         
     wordcloud_path = os.path.join(ANALYSIS_OUTPUT_DIR, 'word_cloud.png')
     plt.savefig(wordcloud_path, dpi=150, bbox_inches='tight')
+    plt.close()
     print(f"Word cloud saved to: {wordcloud_path}")
     return wordcloud_path
 
-def run_analysis(engine, n_clusters=None):
+def run_analysis(papers, embeddings, n_clusters=None):
     """
     Runs the full analysis pipeline and returns paths to the generated plots.
 
     Args:
-        engine (ArxivEngine): An instance of the ArxivEngine.
+        papers (list[dict]): A list of paper dictionaries.
+        embeddings (np.ndarray): An array of embeddings for the papers.
         n_clusters (int, optional): The number of clusters to use. If None, it will be
                                     auto-detected. Defaults to None.
 
     Returns:
-        tuple[str | None, str | None]: Paths to the cluster plot and word cloud, or None if not generated.
+        tuple: A tuple containing plot path, wordcloud path, UMAP reducer, 2D embeddings, and cluster labels.
     """
-    papers, embeddings = load_and_process_papers(engine)
 
     if not papers:
-        return None, None
+        return None, None, None, None, None
 
     # --- Determine the number of clusters ---
     if n_clusters is None:
@@ -220,7 +219,7 @@ def run_analysis(engine, n_clusters=None):
         n_clusters = len(papers)
         if n_clusters == 0:
             print("No papers to analyze.")
-            return None, None
+            return None, None, None, None, None
         print(f"Adjusting number of clusters to {n_clusters}.")
 
     print(f"\n--- Performing K-Means clustering with {n_clusters} clusters... ---")
@@ -234,6 +233,8 @@ def run_analysis(engine, n_clusters=None):
     cluster_names = get_cluster_names(papers, labels, n_clusters) if n_clusters > 1 else ["All Papers"]
 
     plot_path = None
+    reducer = None
+    reduced_embeddings = None
     n_neighbors = min(15, len(papers) - 1)
     if n_neighbors >= 2:
         print("\n--- Reducing dimensionality with UMAP... ---")
@@ -246,13 +247,101 @@ def run_analysis(engine, n_clusters=None):
     print("\n--- Generating Word Cloud... ---")
     wordcloud_path = generate_word_cloud(papers)
 
-    return plot_path, wordcloud_path
+    return plot_path, wordcloud_path, reducer, reduced_embeddings, labels
+
+def generate_daily_plot(rec_embeddings):
+    """
+    Generates a daily cluster plot that overlays new recommendations on the base
+    cluster map of favorite papers.
+    """
+    print("\n--- Generating Daily Cluster Plot with Recommendations ---")
+    if not rec_embeddings:
+        print("Warning: No recommendation embeddings provided. Skipping daily map generation.")
+        return None
+
+    if not os.path.exists(CACHE_FILE):
+        print("Cache file not found. Cannot generate daily plot.")
+        return None
+
+    try:
+        with open(CACHE_FILE, 'rb') as f:
+            cached_data = pickle.load(f)
+        
+        reducer = cached_data.get('umap_reducer')
+        base_embeddings_2d = cached_data.get('umap_embeddings_2d')
+        base_labels = cached_data.get('cluster_labels')
+        base_papers = cached_data.get('papers')
+        
+        if reducer is None or base_embeddings_2d is None or base_labels is None or base_papers is None:
+            print("Cache is missing necessary UMAP data. Run 'arxiv_engine.py update' to generate it.")
+            return None
+    except Exception as e:
+        print(f"Error loading UMAP data from cache: {e}")
+        return None
+
+    # Project new recommendations into the existing 2D space
+    print("Projecting new recommendations into the UMAP space...")
+    rec_embeddings_2d = reducer.transform(np.array(rec_embeddings))
+
+    # Get cluster names for the legend
+    n_clusters = len(np.unique(base_labels))
+    cluster_names = get_cluster_names(base_papers, base_labels, n_clusters) if n_clusters > 1 else ["All Papers"]
+
+    # --- Plotting ---
+    plt.figure(figsize=(16, 10))
+    
+    # Plot base favorite papers
+    base_scatter = plt.scatter(
+        base_embeddings_2d[:, 0], base_embeddings_2d[:, 1], c=base_labels,
+        cmap='viridis', s=60, alpha=0.5
+    )
+
+    # Plot new recommendations
+    rec_scatter = plt.scatter(
+        rec_embeddings_2d[:, 0], rec_embeddings_2d[:, 1], c='red', marker='*',
+        s=300, edgecolor='black', label='Today\'s Recommendations', zorder=10
+    )
+
+    # Annotate new recommendations with their rank
+    for i, pos in enumerate(rec_embeddings_2d):
+        plt.text(pos[0] + 0.05, pos[1] + 0.05, str(i + 1), color='black', fontsize=12, weight='bold', zorder=11)
+
+    plt.title('Daily Recommendations on Favorite Papers Map', fontsize=20)
+    plt.xlabel('UMAP Dimension 1', fontsize=14)
+    plt.ylabel('UMAP Dimension 2', fontsize=14)
+    plt.grid(True, linestyle='--', alpha=0.6)
+    
+    # --- Create a single, combined legend ---
+    all_handles = []
+    all_labels = []
+
+    # Add handles and labels from the base favorite clusters
+    if n_clusters > 1:
+        base_handles, _ = base_scatter.legend_elements()
+        all_handles.extend(base_handles)
+        all_labels.extend(cluster_names)
+    
+    # Add handle and label for the recommendations
+    all_handles.append(rec_scatter)
+    all_labels.append('Today\'s Recommendations')
+
+    # Create the combined legend
+    plt.legend(all_handles, all_labels, loc='best', title="Legend", fontsize=20, title_fontsize=22)
+
+    # Save plot
+    if not os.path.exists(ANALYSIS_OUTPUT_DIR):
+        os.makedirs(ANALYSIS_OUTPUT_DIR)
+    
+    plot_path = os.path.join(ANALYSIS_OUTPUT_DIR, 'daily_cluster_map.png')
+    plt.savefig(plot_path, dpi=150, bbox_inches='tight')
+    plt.close()
+    print(f"Daily cluster plot saved to: {plot_path}")
+    return plot_path
 
 def main():
     """Main function to run the analysis pipeline as a standalone script."""
-    print("Initializing ArxivEngine to load the model...")
-    engine = ArxivEngine(mode='feed')
-
+    # Load data directly from cache
+    papers, embeddings = load_and_process_papers()
     user_n_clusters = None
     if len(sys.argv) > 1:
         try:
@@ -262,7 +351,7 @@ def main():
             print(f"Usage: python {sys.argv[0]} [number_of_clusters]")
             print("Proceeding with automatic cluster number detection.")
     
-    run_analysis(engine, n_clusters=user_n_clusters)
+    run_analysis(papers, embeddings, n_clusters=user_n_clusters)
 
     print("\nAnalysis complete. Results are in the 'analysis_results' directory.")
 

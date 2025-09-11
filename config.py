@@ -22,20 +22,16 @@ MAX_PAPERS_TO_SHOW = 50
 MIN_SCORE_THRESHOLD = 3.0
 AUTHOR_COLLAPSE_THRESHOLD = 10
 
-# --- arXiv RSS Feeds ---
-RSS_URLS = [
-    "http://export.arxiv.org/rss/astro-ph",
-    "http://export.arxiv.org/rss/gr-qc",
-    "http://export.arxiv.org/rss/hep-ph",
-    "http://export.arxiv.org/rss/physics.comp-ph",
-    "http://export.arxiv.org/rss/physics.data-an",
-    "http://export.arxiv.org/rss/physics.gen-ph",
-    "http://export.arxiv.org/rss/physics.hist-ph",
-    "http://export.arxiv.org/rss/physics.soc-ph",
-    "http://export.arxiv.org/rss/physics.pop-ph",
-    "http://export.arxiv.org/rss/math.HO",
-    "http://export.arxiv.org/rss/math.PR",
-    "http://export.arxiv.org/rss/math.ST",
-    "http://export.arxiv.org/rss/stat",
-    "http://export.arxiv.org/rss/CoRR"
+# --- arXiv API Configuration ---
+ARXIV_CATEGORIES = [
+    'astro-ph.CO', 
+    # 'gr-qc', 'hep-ph', 'physics.comp-ph', 'physics.data-an',
+    # 'physics.gen-ph', 'physics.hist-ph', 'physics.soc-ph', 'physics.pop-ph',
+    # 'math.HO', 'math.PR', 'math.ST', 
+    'stat',
+    'cs' # Computer Science (CoRR)
 ]
+
+# Maximum number of results to fetch from arXiv API in a single batch.
+# This should be large enough to cover a full day's publications.
+MAX_ARXIV_RESULTS = 2000

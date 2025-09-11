@@ -11,28 +11,79 @@ import pickle
 import os
 import re
 import configparser
+from datetime import datetime, timedelta, timezone
+import arxiv
 
-import feedparser
 from pyzotero import zotero
 import numpy as np
 from sentence_transformers import SentenceTransformer, util
 from tqdm import tqdm
 import nltk
-from nltk.tokenize import sent_tokenize
+
+# New imports for the improved TLDR generation
+from sumy.parsers.plaintext import PlaintextParser
+from sumy.nlp.tokenizers import Tokenizer as SumyTokenizer
+from sumy.summarizers.lsa import LsaSummarizer
+from sumy.nlp.stemmers import Stemmer
+from sumy.utils import get_stop_words
 
 from config import (
-    BASE, EMBEDDING_MODEL, CACHE_FILE, CONFIG_FILE, RSS_URLS,
-    AUTHOR_WEIGHT, SEMANTIC_WEIGHT, NLTK_DATA_PATH
+    EMBEDDING_MODEL, CACHE_FILE, CONFIG_FILE,
+    AUTHOR_WEIGHT, SEMANTIC_WEIGHT, NLTK_DATA_PATH,
+    ARXIV_CATEGORIES, MAX_ARXIV_RESULTS
 )
 
+def _initialize_nltk():
+    """
+    Ensures all required NLTK data is downloaded to a local, project-specific
+    directory. This function is called once when the module is imported to
+    guarantee that dependencies are met before any other code runs.
+    This approach is more robust than relying on system-wide installations
+    and avoids environment-specific issues.
+    """
+    # --- Step 1: Define required resources ---
+    # We only need 'punkt' and 'stopwords'.
+    required_resources = {
+        'tokenizers/punkt': 'punkt',
+        'corpora/stopwords': 'stopwords'
+    }
+
+    # --- Step 2: Set up local NLTK data path ---
+    # Ensure the local NLTK data directory exists
+    if not os.path.exists(NLTK_DATA_PATH):
+        os.makedirs(NLTK_DATA_PATH)
+
+    # Add the local path to NLTK's data path list
+    if NLTK_DATA_PATH not in nltk.data.path:
+        nltk.data.path.append(NLTK_DATA_PATH)
+
+    # --- Step 3: Download required resources ---
+    for resource_path, resource_name in required_resources.items():
+        try:
+            nltk.data.find(resource_path, paths=[NLTK_DATA_PATH])
+        except LookupError:
+            print(f"NLTK resource '{resource_name}' not found. Downloading to '{NLTK_DATA_PATH}'...")
+            nltk.download(resource_name, download_dir=NLTK_DATA_PATH, quiet=True)
+            print(f"'{resource_name}' download complete.")
+
+    # --- Step 4: Explicitly handle the 'punkt_tab' ghost error ---
+    # This is a non-existent resource that has caused persistent errors.
+    # We will try to download it as requested to handle the error gracefully.
+    try:
+        print("Attempting to resolve the 'punkt_tab' issue by trying to download it...")
+        nltk.download('punkt_tab', download_dir=NLTK_DATA_PATH, quiet=True)
+        print("Warning: 'punkt_tab' was surprisingly found and downloaded. This is unexpected.")
+    except ValueError:
+        # This is the expected outcome, as 'punkt_tab' is not a real package.
+        # We catch the error and inform the user, then proceed.
+        print("Confirmed: 'punkt_tab' is not a valid NLTK resource. The error is handled. Continuing...")
+
+# --- Run dependency setup immediately on import ---
+_initialize_nltk()
 
 __author__ = 'Lijing Shao'
 __email__ = 'Friendshao@gmail.com'
 __licence__ = 'GPL'
-
-#---------------------------------------------------------------------
-BASE = os.path.dirname(os.path.abspath(__file__))
-#---------------------------------------------------------------------
 
 class ArxivEngine(object):
     """arXiv class for fetching and scoring papers.
@@ -60,8 +111,6 @@ class ArxivEngine(object):
         self.config = self._load_config()
         self.zotero_client = self._get_zotero_client()
         self.favorite_papers = None # Cache for favorite papers
-
-        self._ensure_nltk_data()
 
         # Load the model once during initialization to be reused.
         # This is more efficient and avoids rate-limiting errors from HuggingFace.
@@ -97,27 +146,6 @@ class ArxivEngine(object):
         except (configparser.NoOptionError, configparser.NoSectionError, ValueError) as e:
             print(f"Warning: Zotero config is incomplete or invalid in config.ini: {e}")
             return None
-
-    def _ensure_nltk_data(self):
-        """
-        Checks for and downloads NLTK 'punkt' data if missing.
-        Manages a local data directory to avoid system-wide installation issues.
-        """
-        # Ensure the local NLTK data directory exists
-        if not os.path.exists(NLTK_DATA_PATH):
-            os.makedirs(NLTK_DATA_PATH)
-        
-        # Add the local path to NLTK's data path
-        if NLTK_DATA_PATH not in nltk.data.path:
-            nltk.data.path.append(NLTK_DATA_PATH)
-
-        # Check for the 'punkt' tokenizer and download if necessary
-        try:
-            nltk.data.find('tokenizers/punkt', paths=[NLTK_DATA_PATH])
-        except LookupError:
-            print(f"NLTK 'punkt' tokenizer not found. Downloading to '{NLTK_DATA_PATH}'...")
-            nltk.download('punkt', download_dir=NLTK_DATA_PATH, quiet=True)
-            print("Download complete.")
 
     def clean_text(self, text):
         """Cleans a given text string by removing punctuation and extra spaces.
@@ -244,6 +272,12 @@ class ArxivEngine(object):
         else:
             interest_vector = None
 
+        # Run analysis before saving the model to get UMAP data
+        print("\n--- Running Analysis of Favorite Papers ---")
+        from analyze_favorites import run_analysis as run_favorites_analysis
+        # Call with the new signature, passing data directly
+        plot_path, wordcloud_path, reducer, reduced_embeddings, labels = run_favorites_analysis(papers, favorite_embeddings, n_clusters=None)
+
         # --- Step 3: Save all results to a single cache file ---
         print(f"Saving updated models to '{os.path.basename(CACHE_FILE)}'...")
         cache_data = {
@@ -251,7 +285,10 @@ class ArxivEngine(object):
             'papers': papers,
             'author_scores': author_scores,
             'interest_vector': interest_vector,
-            'embeddings': favorite_embeddings
+            'embeddings': favorite_embeddings,
+            'umap_reducer': reducer,
+            'umap_embeddings_2d': reduced_embeddings,
+            'cluster_labels': labels
         }
         with open(CACHE_FILE, 'wb') as f:
             pickle.dump(cache_data, f)
@@ -264,11 +301,6 @@ class ArxivEngine(object):
             print('\n\t\t === Top 20 Favorite Authors === \n')
             for author in top20_authors:
                 print(f"{author.rjust(40)} : {author_scores[author]:.3f}")
-
-        # Run analysis after updating the model
-        print("\n--- Running Analysis of Favorite Papers ---")
-        from analyze_favorites import run_analysis as run_favorites_analysis
-        run_favorites_analysis(self)
 
     def load_score_files(self):
         """Loads the author scores and the interest vector from pickle files.
@@ -341,7 +373,7 @@ class ArxivEngine(object):
         if 'announce type: replace' in summary_lower or 'announce type: cross' in summary_lower:
             total_score *= 0.5
 
-        return total_score, [author_score, semantic_score]
+        return total_score, [author_score, semantic_score], entry_embedding.cpu().numpy()
 
     def get_content_from_entry(self, entry=dict()):
         """Extracts and cleans content from a feedparser entry.
@@ -372,59 +404,117 @@ class ArxivEngine(object):
 
     def _generate_tldr(self, text):
         """Generates a one-sentence summary (TLDR) for a given text.
-
-        This uses a simple but effective heuristic: find the sentence that is most
-        semantically similar to the entire text.
+        
+        This uses the Latent Semantic Analysis (LSA) summarizer from the 'sumy'
+        library to find the most significant sentence in the text.
         """
         try:
-            # Clean up text and split into sentences
+            # Clean up text for the parser
             text = re.sub(r'\s+', ' ', text).strip()
-            sentences = sent_tokenize(text)
-            # Filter out very short sentences that are unlikely to be meaningful
-            sentences = [s.strip() for s in sentences if len(s.strip()) > 30]
-            if not sentences:
-                return text[:250] + "..." if len(text) > 250 else text
+            if not text:
+                return "No abstract available."
 
-            text_embedding = self.model.encode(text, convert_to_tensor=True)
-            sentence_embeddings = self.model.encode(sentences, convert_to_tensor=True)
-            similarities = util.cos_sim(text_embedding, sentence_embeddings)
-            return sentences[np.argmax(similarities)]
+            # sumy setup
+            parser = PlaintextParser.from_string(text, SumyTokenizer("english"))
+            stemmer = Stemmer("english")
+            summarizer = LsaSummarizer(stemmer)
+            summarizer.stop_words = get_stop_words("english")
+
+            # Get the single best sentence
+            summary = summarizer(parser.document, 1)
+
+            if summary:
+                return str(summary[0])
+            else:
+                # Fallback if no summary can be generated
+                return text[:250] + "..." if len(text) > 250 else text
         except Exception as e:
             # Make the error message more visible during execution
             print(f"\n[ERROR] TLDR generation failed for a paper: {e}")
             return text[:250] + "..." if len(text) > 250 else text
 
     def get_recommendations(self, max_papers, min_score):
-        """Fetches daily papers, scores them, and returns a sorted list of recommendations.
+        """Fetches the latest daily papers using the arXiv API, scores them, and returns a sorted list.
 
-        This method iterates through the RSS_URLS, fetches all new papers,
-        scores each one, and then filters and sorts them based on the provided
-        thresholds.
+        This method fetches a large batch of recent papers and filters them to include
+        only those published on the previous calendar day (UTC). It then scores
+        this daily set and returns the top recommendations.
 
         Args:
             max_papers (int): The maximum number of papers to return.
             min_score (float): The minimum score a paper must have to be included.
 
         Returns:
-            list[dict]: A list of recommended paper items, where each item is a
-            dictionary containing the score, score components, and the original feedparser entry.
+            list[dict]: A list of recommended paper items, where each item is a dictionary
+            containing the score, score components, and the original entry data.
         """
-        links, scored_entries = [], []
-        # Prepare entries with scores
-        print("Fetching and scoring papers from RSS feeds...")
-        for rss_url in tqdm(RSS_URLS, desc="Parsing Feeds"):
-            feed = feedparser.parse(rss_url)
-            for entry in feed["entries"]:
-                link = entry['link']
-                if link not in links:
-                    links.append(link)
-                    score, score_list = self.score_from_entry(entry, load_score=False, score_files=(self.author_scores, self.interest_vector))
-                    scored_entries.append({
-                        'score': score,
-                        'score_list': score_list,
-                        'entry': entry
-                    })
+        # --- Step 1: Fetch a batch of recent papers from arXiv API ---
+        print("Fetching recent papers from arXiv API...")
 
+        # As suggested, use a configured client for more robust fetching.
+        client = arxiv.Client(
+            page_size=5000,
+            delay_seconds=2,
+            num_retries=20
+        )
+
+        query = " OR ".join(f"cat:{cat}" for cat in ARXIV_CATEGORIES)
+        search = arxiv.Search(
+            query=query,
+            max_results=MAX_ARXIV_RESULTS, # Fetch a large batch to ensure we get all of today's papers
+            sort_by=arxiv.SortCriterion.SubmittedDate,
+            sort_order=arxiv.SortOrder.Descending
+        )
+
+        # --- Step 2: Filter for papers published on the target date ---
+        # Target date is "yesterday" UTC, as the script typically runs early in the morning.
+        target_date = (datetime.now(timezone.utc) - timedelta(days=1)).date()
+        print(f"Filtering for papers published on {target_date}...")
+
+        papers_to_score = []
+        processed_ids = set()
+
+        results_iterator = client.results(search)
+        try:
+            for result in tqdm(results_iterator, desc="Filtering new papers"):
+                try:
+                    if result.entry_id in processed_ids:
+                        continue
+
+                    # 'updated' is the date of the last version. For new papers, it's the publication date.
+                    if result.updated.date() == target_date:
+                        processed_ids.add(result.entry_id)
+                        papers_to_score.append(result)
+                except Exception as e_inner:
+                    # This handles errors for a single problematic paper entry, allowing the loop to continue.
+                    print(f"\nWarning: Skipping a paper due to a processing error: {e_inner}")
+                    continue
+        except arxiv.UnexpectedEmptyPageError as e:
+            # This can happen if we ask for more results than the API can provide.
+            # We can safely ignore it and proceed with the papers we've already collected.
+            print(f"\nWarning: Hit the end of arXiv results unexpectedly. Proceeding with {len(papers_to_score)} papers. (Error: {e})")
+
+        if not papers_to_score:
+            print(f"No new papers found for {target_date}. Exiting.")
+            return []
+
+        # --- Step 3: Score the filtered papers ---
+        print(f"Found {len(papers_to_score)} new papers from {target_date}. Now scoring them...")
+        scored_entries = []
+        for result in tqdm(papers_to_score, desc="Scoring Papers"):
+            # Convert arxiv.Result to a dict that mimics the old feedparser entry
+            # to minimize changes in downstream functions.
+            entry = {
+                'link': result.entry_id,
+                'title': f"{result.title} (arXiv:{result.get_short_id()})",
+                'summary': result.summary,
+                'author': ', '.join(author.name for author in result.authors)
+            }
+
+            score, score_list, embedding = self.score_from_entry(entry, load_score=False, score_files=(self.author_scores, self.interest_vector))
+            scored_entries.append({'score': score, 'score_list': score_list, 'entry': entry, 'embedding': embedding})
+
+        # --- Step 4: Filter, sort, and generate TLDRs ---
         # Sort entries by score in descending order
         sorted_entries = sorted(scored_entries, key=lambda x: x['score'], reverse=True)
 
@@ -437,6 +527,7 @@ class ArxivEngine(object):
                 papers_to_process.append(item)
 
         papers_to_show = []
+        rec_embeddings = []
         # Now, generate TLDRs only for the selected papers, with a progress bar
         # Also printing the result to the terminal for debugging, as requested.
         if papers_to_process:
@@ -445,17 +536,21 @@ class ArxivEngine(object):
                 # Clean the summary text before generating TLDR
                 summary_text = re.sub(r'<[^>]*>', '', item['entry']['summary'])
                 summary_text = re.sub(r'\s+', ' ', summary_text).strip()
+                # Defensively remove any "Abstract: " or similar prefixes that might have been added
+                # to ensure the summarizer receives clean text.
+                # This finds the first instance of "Abstract: " and takes everything after it.
+                summary_text = re.sub(r'.*?Abstract:\s*', '', summary_text, count=1, flags=re.IGNORECASE | re.DOTALL).strip()
                 tldr = self._generate_tldr(summary_text)
                 item['tldr'] = tldr
 
-                # Print the generated TLDR for debugging. Using repr() to show any special characters.
-                print(f"\n  - TLDR for '{item['entry']['title'][:50]}...': {repr(tldr)}")
+                # # Print the generated TLDR for debugging. Using repr() to show any special characters.
+                # print(f"\n  - TLDR for '{item['entry']['title'][:50]}...': {repr(tldr)}")
 
                 papers_to_show.append(item)
+                rec_embeddings.append(item['embedding'])
 
         print(f'\nIn total: {len(scored_entries)} entries, recommending top {len(papers_to_show)}\n')
-        return papers_to_show
-
+        return papers_to_show, rec_embeddings
 
 if __name__ == '__main__':
     # This block allows the script to be run directly to update the interest model.
