@@ -2,47 +2,72 @@
 
 ## Project Overview
 
-`arxiv_daily` is an automated tool that fetches the latest papers from various arXiv categories, scores them based on your interests and history, and generates a daily HTML recommendation page. With GitHub Actions, you can automate daily runs and browse the results online via GitHub Pages.
+`arxiv_daily` is a personalized, automated tool that acts as your personal research assistant. It fetches the latest papers from arXiv, scores them based on your Zotero library, and generates a beautiful, daily HTML digest. This digest includes not only paper recommendations but also a visual analysis of your research interests, including topic clusters and a word cloud.
 
 ---
 
 ## Features
 
-- Automatically fetches the latest papers from arXiv RSS feeds
-- Scores papers based on authors, titles, abstracts, and your favorites
-- Learns your interests from your favorite arXiv links
-- Generates a daily HTML page with scores and abstracts
-- Supports automated deployment to GitHub Pages for online browsing
-- Archives all data and historical results
+- **Zotero API Integration**: Learns your research interests directly and automatically from your Zotero library.
+- **Semantic Recommendations**: Uses a state-of-the-art language model (`allenai-specter`) to score new papers based on semantic similarity to your existing library.
+- **Automated TLDRs**: Generates a concise, one-sentence summary for each recommended paper using the `sumy` library.
+- **Robust Paper Fetching**: Uses the official `arxiv` API to reliably fetch the latest papers, with error handling for API quirks.
+- **Intelligent Interest Analysis**:
+   - Automatically determines the optimal number of research clusters in your library using the Silhouette Score.
+   - Generates meaningful keyword labels for each topic cluster using TF-IDF.
+   - Creates a 2D visualization of your interest clusters and a word cloud of key terms.
+- **Daily HTML Digest**: Produces a clean, modern, and interactive HTML page with your daily recommendations and interest analysis.
+- **Fully Automated**: Includes a GitHub Actions workflow that runs the entire pipeline daily, commits the results, and deploys the page to GitHub Pages.
+- **Efficient Caching**: Intelligently checks for changes in your Zotero library to avoid unnecessary re-computation, making updates fast and efficient.
 
 ---
 
 ## Quick Start
 
-### 1. Clone the Repository
+### 1. Setup
 
+1.  **Clone the Repository**
+    ```bash
+    git clone https://github.com/chuam/arxiv_daily.git
+    cd arxiv_daily
+    ```
+
+2.  **Install Dependencies** (Python 3.10+ is recommended)
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+3.  **Configure Zotero API Access**
+    -   Create a Zotero API key: `https://www.zotero.org/settings/keys/new`
+    -   Find your User ID on the same page.
+    -   Create and edit `config.ini`:
+    ```bash
+    cp config.ini.template config.ini
+    # Now edit config.ini with your credentials
+    ```
+    *(Optional: You can also specify a Zotero collection ID in `config.ini` to focus the analysis on a specific subset of your library.)*
+
+### 2. Usage
+
+#### Step 1: Build Your Interest Model
+The first time you run the tool, or whenever you want to update your interest profile based on your latest Zotero library, run:
 ```bash
-git clone https://github.com/your-username/arxiv_daily.git
-cd arxiv_daily
+python arxiv_engine.py update
 ```
+This command connects to Zotero, builds your interest models, and automatically runs the analysis to generate plots of your interests. It will intelligently skip the process if no changes are detected in your Zotero library.
 
-### 2. Install Dependencies
-
-Python 3.10+ is recommended.
-
+#### Step 2: Generate Daily Recommendations
+This is the command you will run daily:
 ```bash
-pip install -r requirements.txt
-python -m nltk.downloader punkt stopwords
+python arxiv_rank.py
 ```
+It fetches the latest arXiv papers published on the previous day, scores them against your profile, and generates a new HTML page.
 
-### 3. Run Locally
-
+#### (Optional) Run Standalone Analysis
+To re-run only the analysis part (e.g., to try a different number of clusters) without fetching from Zotero, use:
 ```bash
-python arxiv_rank.py update   # (Optional) Update interest model
-python arxiv_rank.py          # Generate today's HTML recommendation page
+python analyze_favorites.py [number_of_clusters]
 ```
-
-The generated HTML file will be named by date (e.g., `20250909.html`) and copied as `index.html`. Historical files are stored in the `arxiv_history/` folder.
 
 ---
 
@@ -51,45 +76,44 @@ The generated HTML file will be named by date (e.g., `20250909.html`) and copied
 ### GitHub Actions Automation
 
 This project includes a GitHub Actions workflow that runs daily, commits all changes, and deploys HTML pages to the `gh-pages` branch.
+To enable Zotero integration in GitHub Actions, you must add the following secrets to your repository's settings (`Settings > Secrets and variables > Actions`):
+-   `ZOTERO_USER_ID`: Your Zotero user ID.
+-   `ZOTERO_API_KEY`: Your Zotero API key.
 
-### GitHub Pages Online Browsing
+The workflow uses `actions/cache` to cache the generated `arxiv_cache.pickle` and `nltk_data/` files between runs, speeding up the process when your Zotero library or dependencies haven't changed. These caches are not committed to the repository.
+
+### GitHub Pages
 
 Enable GitHub Pages in your repository settings, using the `gh-pages` branch as the source.  
 You can then browse daily recommendations at:
-
-```
-https://your-username.github.io/your-repo-name/
-```
+`https://<your-username>.github.io/arxiv_daily/`
 
 ---
 
-## Main Files
+## Project Structure
 
-- `arxiv_rank.py`: Core logic for fetching and scoring papers
-- `requirements.txt`: Dependency list
-- `favorite_arxiv_links.txt`: Your favorite arXiv links
-- `arxiv_history/`: Archive of historical HTML pages
-- `.github/workflows/arxiv_daily.yml`: Automation workflow configuration
+- `arxiv_engine.py`: Core engine for fetching, scoring, and recommending papers. Also handles updating the interest model.
+- `arxiv_rank.py`: Main script to generate the daily HTML recommendation page.
+- `analyze_favorites.py`: A tool to analyze and visualize your favorite papers. Can be run standalone for advanced analysis.
+- `config.py`: Central configuration file for shared constants and settings.
+- `config.ini.template`: Template for Zotero API configuration.
+- `requirements.txt`: Dependency list.
+- `arxiv_history/`: Archive of historical HTML pages.
+- `analysis_results/`: Directory for storing generated analysis plots (word cloud, cluster map).
+- `.github/workflows/arxiv_daily.yml`: Automation workflow configuration.
 
 ---
 
 ## FAQ
 
 - **How do I customize my interests?**  
-  Edit `favorite_arxiv_links.txt` and add your favorite arXiv paper links. The model will update your interests on the next run.
+  Simply add relevant papers to your Zotero library. The system will automatically detect changes on the next `update` run. To focus on a specific area, you can provide a Zotero collection ID in `config.ini`.
 
 - **How do I change the categories fetched?**  
-  Edit the `RSS_URLS` list in `arxiv_rank.py`.
-
-- **How do I deploy to my own repository?**  
-  Fork this project and set up GitHub Pages as described above.
+  Edit the `ARXIV_CATEGORIES` list in `config.py`.
 
 ---
 
-## License
+## License & Acknowledgements
 
-GPL
-
----
-
-Feel free to open an issue or PR if you have questions
+This project is based on the original work by Lijing Shao and is licensed under the GPL.
