@@ -10,3 +10,5 @@ umap-learn
 pyzotero
 nltk
 tqdm
+sumy
+arxiv

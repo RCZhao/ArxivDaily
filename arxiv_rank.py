@@ -10,6 +10,7 @@ import re
 import os
 
 from arxiv_engine import ArxivEngine
+from analyze_favorites import generate_daily_plot
 from config import BASE, MAX_PAPERS_TO_SHOW, MIN_SCORE_THRESHOLD, AUTHOR_COLLAPSE_THRESHOLD, ANALYSIS_OUTPUT_DIR
 
 
@@ -49,7 +50,7 @@ function toggleAuthors(element) {
 </script>'''
 #---------------------------------------------------------------------
 
-def format_entry_to_html(item):
+def format_entry_to_html(index, item):
     """Formats a single scored paper item into an HTML card.
 
     Args:
@@ -109,6 +110,7 @@ def format_entry_to_html(item):
     '''
     scores = f'''
         <div class="arxiv-scores">
+            <span class="badge bg-success">Total Score: {score:.1f}</span>
             <span class="badge bg-info text-dark">Author Score: {score_list[0]:.2f}</span>
             <span class="badge bg-primary">Semantic Score: {score_list[1]:.2f}</span>
         </div>
@@ -116,9 +118,13 @@ def format_entry_to_html(item):
     # Clean abstract for display: remove HTML tags and normalize whitespace
     abstract = re.sub(r'<[^>]*>', '', entry['summary'])
     abstract = re.sub(r'\s+', ' ', abstract).strip()
+    # Defensively remove any "Abstract: " or similar prefixes that might have been added
+    # This handles cases where the summary might be polluted with extra metadata.
+    # This finds the first instance of "Abstract: " and takes everything after it.
+    abstract = re.sub(r'.*?Abstract:\s*', '', abstract, count=1, flags=re.IGNORECASE | re.DOTALL).strip()
     html = f'''
     <div class="arxiv-card card mb-4">
-        <div class="arxiv-title card-header">{score:.1f}. {title_text}</div>
+        <div class="arxiv-title card-header">{index}. {title_text}</div>
         <div class="arxiv-abstract card-body">
             <div class="arxiv-meta mb-3">{authors_html}</div>
             <div class="tldr-section mb-3">
@@ -162,7 +168,7 @@ def generate_page(recommended_papers, cluster_plot_path=None, word_cloud_path=No
             <style>
                 body { font-family: 'Roboto', Arial, sans-serif; background: #f8f9fa; transition: background 0.3s; }
                 .arxiv-card { margin: 2em auto; max-width: 900px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-radius: 16px; transition: box-shadow 0.3s, transform 0.3s; }
-                .arxiv-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.18); transform: translateY(-4px) scale(1.01);}
+                .arxiv-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); transform: translateY(-1px); }
                 .arxiv-title { background: linear-gradient(90deg, #0d6efd 60%, #6610f2 100%); color: #fff; border-radius: 16px 16px 0 0; padding: 1.5em; font-size: 1.5em; font-weight: 700; letter-spacing: 0.5px;}
                 .arxiv-meta { font-size: 1em; color: #555; margin-bottom: 1em; }
                 .arxiv-abstract { background: #fff; padding: 1.5em; border-radius: 0 0 16px 16px; font-size: 1.1em; line-height: 1.7;}
@@ -173,9 +179,11 @@ def generate_page(recommended_papers, cluster_plot_path=None, word_cloud_path=No
                 @media (prefers-color-scheme: dark) {
                     body { background: #181a1b; color: #e4e6eb; }
                     .arxiv-card { background: #23272b; box-shadow: 0 2px 8px rgba(0,0,0,0.28);}
+                    .arxiv-card:hover { box-shadow: 0 5px 15px rgba(0,0,0,0.25); transform: translateY(-1px); }
                     .arxiv-title { background: linear-gradient(90deg, #375a7f 60%, #6f42c1 100%);}
                     .arxiv-abstract { background: #23272b; color: #e4e6eb;}
                     .navbar { background: #23272b; color: #e4e6eb;}
+                    .text-muted { color: #adb5bd !important; }
                 }
             </style>
             ''' + MATHJAX + '</head>\n')
@@ -221,8 +229,8 @@ def generate_page(recommended_papers, cluster_plot_path=None, word_cloud_path=No
         f.write('<header class="mb-4"><h1 class="display-5 text-center text-primary">arXiv:'
                 + time.strftime("%Y-%m-%d") + '</h1></header>\n')
 
-        for item in recommended_papers:
-            f.write(format_entry_to_html(item))
+        for i, item in enumerate(recommended_papers, 1):
+            f.write(format_entry_to_html(i, item))
 
         f.write('</div>\n')
         f.write('''
@@ -232,7 +240,7 @@ def generate_page(recommended_papers, cluster_plot_path=None, word_cloud_path=No
         '''.format(year=time.strftime("%Y")))
         f.write('</body></html>\n')
 
-    os.system(browser_cmd + " " + out_file_name)
+    # os.system(browser_cmd + " " + out_file_name)
     print(f'''\nIn total {len(recommended_papers)} articles for your preview; please enjoy and have
           a good day!\n''')
 
@@ -262,7 +270,23 @@ if __name__ == '__main__':
 
         # Get daily recommendations
         print("\n--- Getting Daily Recommendations ---")
-        recommendations = recommender.get_recommendations(MAX_PAPERS_TO_SHOW, MIN_SCORE_THRESHOLD)
+        recommendations, rec_embeddings = recommender.get_recommendations(MAX_PAPERS_TO_SHOW, MIN_SCORE_THRESHOLD)
+        
+        # Generate the daily plot with recommendations
+        daily_plot_path = None
+        if recommendations:
+            try:
+                # Pass only rec_embeddings as recommendations is not used
+                daily_plot_path = generate_daily_plot(rec_embeddings)
+            except Exception as e:
+                print(f"Warning: Failed to generate daily cluster plot. Error: {e}")
+        
+        # Use the new daily plot if available, otherwise fall back to the static one
+        final_cluster_plot = daily_plot_path if daily_plot_path else cluster_plot
+        if not daily_plot_path and recommendations:
+            print("\nWarning: Could not generate daily recommendation map. Falling back to static cluster map.")
+            print("         This is likely because the cache is missing UMAP data.")
+            print("         Please run 'python arxiv_engine.py update' to generate it.")
         
         # Generate the final HTML page including analysis results
-        generate_page(recommendations, cluster_plot_path=cluster_plot, word_cloud_path=word_cloud)
+        generate_page(recommendations, cluster_plot_path=final_cluster_plot, word_cloud_path=word_cloud)

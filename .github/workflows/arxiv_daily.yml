@@ -46,7 +46,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: nltk_data
-          key: ${{ runner.os }}-nltk-data-v1
+          key: ${{ runner.os }}-nltk-data-v2 # Bump version to include stopwords
 
       - name: Update score files
         run: |
