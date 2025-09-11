@@ -1,14 +1,4 @@
 feedparser
 requests
 beautifulsoup4
-sentence_transformers
-numpy
-scikit-learn
-matplotlib
-wordcloud
-umap-learn
-pyzotero
-nltk
-tqdm
-sumy
-arxiv
+rake-nltk

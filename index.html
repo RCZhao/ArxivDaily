@@ -8,7 +8,7 @@
             <style>
                 body { font-family: 'Roboto', Arial, sans-serif; background: #f8f9fa; transition: background 0.3s; }
                 .arxiv-card { margin: 2em auto; max-width: 900px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-radius: 16px; transition: box-shadow 0.3s, transform 0.3s; }
-                .arxiv-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); transform: translateY(-1px); }
+                .arxiv-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.18); transform: translateY(-4px) scale(1.01);}
                 .arxiv-title { background: linear-gradient(90deg, #0d6efd 60%, #6610f2 100%); color: #fff; border-radius: 16px 16px 0 0; padding: 1.5em; font-size: 1.5em; font-weight: 700; letter-spacing: 0.5px;}
                 .arxiv-meta { font-size: 1em; color: #555; margin-bottom: 1em; }
                 .arxiv-abstract { background: #fff; padding: 1.5em; border-radius: 0 0 16px 16px; font-size: 1.1em; line-height: 1.7;}
@@ -19,20 +19,13 @@
                 @media (prefers-color-scheme: dark) {
                     body { background: #181a1b; color: #e4e6eb; }
                     .arxiv-card { background: #23272b; box-shadow: 0 2px 8px rgba(0,0,0,0.28);}
-                    .arxiv-card:hover { box-shadow: 0 5px 15px rgba(0,0,0,0.25); transform: translateY(-1px); }
                     .arxiv-title { background: linear-gradient(90deg, #375a7f 60%, #6f42c1 100%);}
                     .arxiv-abstract { background: #23272b; color: #e4e6eb;}
                     .navbar { background: #23272b; color: #e4e6eb;}
-                    .text-muted { color: #adb5bd !important; }
                 }
             </style>
             
 <style>
-/* Improved abstract readability */
-.arxiv-abstract-text {
-    font-size: 1.1em;
-    line-height: 1.7;
-}
 p.big {
     line-height: 1.6;
     font-size: large;
@@ -46,17 +39,6 @@ p.big {
     }
   });
 </script>
-<script>
-function toggleAuthors(element) {
-    const fullList = element.querySelector('.author-full');
-    const shortList = element.querySelector('.author-short');
-    const toggleText = element.querySelector('.author-toggle');
-    
-    fullList.style.display = fullList.style.display === 'none' ? 'inline' : 'none';
-    shortList.style.display = shortList.style.display === 'none' ? 'inline' : 'none';
-    toggleText.textContent = fullList.style.display === 'none' ? ' (show all)' : ' (show less)';
-}
-</script>
 <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
 </script></head>
 <body>
@@ -67,463 +49,361 @@ function toggleAuthors(element) {
                 <span class="navbar-text">Modern arXiv Reader</span>
             </div>
         </nav>
-        
-            <div class="container py-4">
-                <header class="mb-4"><h2 class="display-6 text-center">Analysis of Your Favorites</h2></header>
-                <div class="row align-items-center">
-                    <div class="col-lg-6 mb-4">
-                        <div class="card h-100">
-                            <div class="card-header fw-bold">Interest Word Cloud</div>
-                            <div class="card-body text-center p-2">
-                                <img src="analysis_results/word_cloud.png" class="img-fluid rounded" alt="Word Cloud of favorite paper topics">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6 mb-4">
-                        <div class="card h-100">
-                            <div class="card-header fw-bold">Interest Clusters</div>
-                            <div class="card-body text-center p-2">
-                                <img src="analysis_results/daily_cluster_map.png" class="img-fluid rounded" alt="2D Cluster plot of favorite papers">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="container py-4">
+        <div class="container py-4">
 <header class="mb-4"><h1 class="display-5 text-center text-primary">arXiv:2025-09-11</h1></header>
 
-    <div class="arxiv-card card mb-4">
-        <div class="arxiv-title card-header">1. Matter power spectrum reconstruction with KiDS-Legacy: Improved internal $Λ$CDM consistency and preference for strong baryonic feedback</div>
-        <div class="arxiv-abstract card-body">
-            <div class="arxiv-meta mb-3">
-            <div onclick="toggleAuthors(this)" style="cursor: pointer;">
-                <strong>
-                    <span class="author-short">Jeger C. Broxterman, Patrick Simon, Lucas Porth, Konrad Kuijken, Angus H. Wright, Marika Asgari, Maciej Bilicki, Catherine Heymans, Hendrik Hildebrandt, Henk Hoekstra, et al.</span>
-                    <span class="author-full" style="display: none;">Jeger C. Broxterman, Patrick Simon, Lucas Porth, Konrad Kuijken, Angus H. Wright, Marika Asgari, Maciej Bilicki, Catherine Heymans, Hendrik Hildebrandt, Henk Hoekstra, Benjamin Joachimi, Shun-Sheng Li, Matteo Maturi, Lauro Moscardini, Mario Radovich, Robert Reischke, Maximilian Von Wietersheim-Kramsta</span>
-                </strong>
-                <a class="author-toggle text-primary" style="text-decoration: none;"> (show all)</a>
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">11.6. Parity Violation in Galaxy Shapes: Primordial Non-Gaussianity</div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-2"><strong>Toshiki Kurita, Drew Jamieson, Eiichiro Komatsu, Fabian Schmidt</strong></div>
+                <div>arXiv:2509.08787v1 Announce Type: new  Abstract: We present a comprehensive study of galaxy intrinsic alignment (IA) as a probe of parity-violating primordial non-Gaussianity (PNG). Within the effective field theory (EFT) framework, we show that the parity-odd IA power spectrum is sensitive to the collapsed limit of the parity-odd primordial trispectrum. For a $U(1)$-gauge inflationary model, the IA power spectrum is proportional to the power spectrum of the curvature perturbation, $P_\zeta(k) \propto k^{-3}$. However, the proportionality constants contain not only the PNG amplitude but also undetermined EFT bias parameters. We use $N$-body simulations to determine the bias parameters for dark matter halos. Using these bias parameters, we forecast IA's constraining power, assuming data from the Dark Energy Spectroscopic Instrument (DESI) and the Rubin Observatory Legacy Survey of Space and Time (LSST). We find that the IA power spectrum can improve the current limits on the amplitude of parity-violating PNG derived from galaxy four-point correlation and CMB trispectrum analyses. Moreover, galaxy shapes are complementary to these probes as they are sensitive to different scales and trispectrum configurations. Beyond galaxy shapes, we develop a new method to generate initial conditions for simulations and forward models from the parity-odd trispectrum with an enhanced collapsed limit.</div>
+                
+            <div class="arxiv-links mt-2">
+                <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/" target="_blank">arXiv</a>
+                <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/" target="_blank">PDF</a>
+                <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:" target="_blank">ADS</a>
+            </div>
+        
+                
+            <div class="arxiv-scores">
+                <span class="badge bg-info text-dark">Author: 0</span>
+                <span class="badge bg-primary">Title: 6</span>
+                <span class="badge bg-secondary">Abstract: 16</span>
+            </div>
+        
             </div>
         </div>
-            <div class="tldr-section mb-3">
-                <p class="fst-italic text-muted"><strong>TLDR:</strong> At large scales, $k\lesssim0.1\,h\,\rm Mpc^{-1}$, our power spectrum reconstruction aligns with $\Lambda$CDM predictions with a density fluctuation amplitude $\sigma_8=0.81$.</p>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">6.2. Detecting Local and Integrated Relativistic Effects by Multi-Tracing a Single Galaxy Population in Harmonic Space</div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-2"><strong>Marco Novara, Federico Montano, Stefano Camera</strong></div>
+                <div>arXiv:2509.08056v1 Announce Type: new  Abstract: Measuring relativistic effects on cosmological scales would provide further confirmation of the validity of general relativity in the still poorly tested condition of weak gravity. Despite their relevance, relativistic imprints in the distribution of galaxies on large scales have so far eluded detection, mainly because they are stronger on the largest cosmic scales, which are plagued by cosmic variance. Expanding on previous works, we study galaxy clustering by subdividing a galaxy population into two sub-samples -- bright and faint -- and we here focus on their two-point correlation function in harmonic space, i.e. via the angular power spectrum. Thanks to such a split in magnitude and by exploiting the multi-tracer technique, we are able to boost the impact of the relativistic contributions. We first focus on the leading relativistic contribution given by the Doppler effect and show that, with a carefully tailored luminosity cut, it can be detected. Then, we look at the sub-dominant effects predicted by general relativity and quantify how their statistical significance, as yet undetectable, varies with redshift binning and survey specifications. As case studies, we consider in our forecasts a bright galaxy sample at low redshift, an H$\alpha$ emission-line galaxy survey at intermediate redshifts, and high-redshift Lyman-break galaxies at high redshift.</div>
+                
+            <div class="arxiv-links mt-2">
+                <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/" target="_blank">arXiv</a>
+                <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/" target="_blank">PDF</a>
+                <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:" target="_blank">ADS</a>
             </div>
-            <div class="arxiv-abstract-text">Direct measurements of the matter power spectrum, $P_\mathrm{m}(k,z)$, provide a powerful tool to investigate observed tensions between models of structure growth while also testing the internal consistency of cosmological probes. We analyse cosmic shear data from the final data release of the Kilo-Degree Survey (KiDS), presenting a deprojected $P_\mathrm{m}(k,z)$, measured in up to three redshift bins. Compared to analyses using previous KiDS releases, we find improved internal consistency in the $z\lesssim0.7$ regime. At large scales, $k\lesssim0.1\,h\,\rm Mpc^{-1}$, our power spectrum reconstruction aligns with $\Lambda$CDM predictions with a density fluctuation amplitude $\sigma_8=0.81$. Furthermore, at small scales, $k=3$-$20\,h\,\rm Mpc^{-1}$, the average matter power spectrum is suppressed by $30\%\pm10\%\,{\rm (stat.)}\pm4\%\,{\rm (sys.)}$ with $2.8\sigma$ significance relative to a dark-matter-only model, consistent with expectations of strong baryonic feedback.</div>
-            <div class="mt-3">
-        <div class="arxiv-links mt-2">
-            <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2509.08365" target="_blank">arXiv</a>
-            <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2509.08365" target="_blank">PDF</a>
-            <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2509.08365" target="_blank">ADS</a>
-        </div>
-    </div>
-            <div class="mt-2">
-        <div class="arxiv-scores">
-            <span class="badge bg-success">Total Score: 78.3</span>
-            <span class="badge bg-info text-dark">Author Score: 13.81</span>
-            <span class="badge bg-primary">Semantic Score: 0.93</span>
-        </div>
-    
-        </div>
-    </div>
-    
-    <div class="arxiv-card card mb-4">
-        <div class="arxiv-title card-header">2. Dark Energy Survey Year 6 Results: improved mitigation of spatially varying observational systematics with masking</div>
-        <div class="arxiv-abstract card-body">
-            <div class="arxiv-meta mb-3">
-            <div onclick="toggleAuthors(this)" style="cursor: pointer;">
-                <strong>
-                    <span class="author-short">M. Rodríguez-Monroy, N. Weaverdyck, J. Elvin-Poole, I. Sevilla-Noarbe, A. Carnero Rosell, A. Drlica-Wagner, S. Avila, M. R. Becker, K. Bechtol, M. Crocce, et al.</span>
-                    <span class="author-full" style="display: none;">M. Rodríguez-Monroy, N. Weaverdyck, J. Elvin-Poole, I. Sevilla-Noarbe, A. Carnero Rosell, A. Drlica-Wagner, S. Avila, M. R. Becker, K. Bechtol, M. Crocce, M. Gatti, J. Mena-Fernández, A. Porredon, D. Sanchez Cid, M. Yamamoto, M. Aguena, S. S. Allam, O. Alves, F. Andrade-Oliveira, D. Bacon, J. Blazek, S. Bocquet, D. Brooks, R. Camilleri, J. Carretero, R. Cawthon, C. Chang, L. N. da Costa, M. E. da Silva Pereira, S. Desai, H. T. Diehl, P. Doel, C. Doux, S. Everett, B. Flaugher, P. Fosalba, J. Frieman, J. García-Bellido, R. A. Gruendl, K. Herner, S. R. Hinton, D. L. Hollowood, K. Honscheid, D. Huterer, D. J. James, K. Kuehn, O. Lahav, S. Lee, J. L. Marshall, R. Miquel, J. Muir, J. Myles, R. L. C. Ogando, A. A. Plazas Malagón, J. Prat, E. Sanchez, T. Schutt, M. Smith, E. Suchyta, M. E. C. Swanson, C. To, M. A. Troxel, D. L. Tucker, V. Vikram</span>
-                </strong>
-                <a class="author-toggle text-primary" style="text-decoration: none;"> (show all)</a>
+        
+                
+            <div class="arxiv-scores">
+                <span class="badge bg-info text-dark">Author: 0</span>
+                <span class="badge bg-primary">Title: 6</span>
+                <span class="badge bg-secondary">Abstract: 5</span>
+            </div>
+        
             </div>
         </div>
-            <div class="tldr-section mb-3">
-                <p class="fst-italic text-muted"><strong>TLDR:</strong> As photometric surveys reach unprecedented statistical precision, systematic uncertainties increasingly dominate large-scale structure probes relying on galaxy number density.</p>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">6.0. Mixed Dark Matter and Galaxy Clustering: The Importance of Relative Perturbations</div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-2"><strong>\c{S}afak \c{C}elik, Fabian Schmidt</strong></div>
+                <div>arXiv:2508.21481v2 Announce Type: replace  Abstract: We develop a perturbative model to describe large-scale structure in cosmologies where dark matter consists of a mixture of cold (CDM) and warm (WDM) components. In such mixed dark matter (MDM) scenarios, even a subdominant warm component can introduce distinctive signatures via its free-streaming effects, altering the evolution of density and velocity perturbations. We present linear-order solutions for both total and relative perturbations in the two-fluid system, identifying novel contributions to galaxy bias caused by the relative density and velocity modes between the components. Incorporating these effects into the galaxy bias expansion, we compute the linear galaxy power spectrum in both real and redshift space. Using Fisher matrix forecasts, we assess the sensitivity of upcoming surveys such as DESI and PFS to MDM scenarios. Our results demonstrate that neglecting relative perturbations can lead to significant biases in inferred constraints on the warm dark matter fraction, particularly for lighter WDM masses ($\lesssim 150~\mathrm{eV}$ and $\lesssim 80~\mathrm{eV}$) for PFS and DESI, respectively. This framework provides a consistent and generalizable approach for incorporating multi-component dark matter dynamics into galaxy clustering analyses.</div>
+                
+            <div class="arxiv-links mt-2">
+                <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/" target="_blank">arXiv</a>
+                <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/" target="_blank">PDF</a>
+                <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:" target="_blank">ADS</a>
             </div>
-            <div class="arxiv-abstract-text">As photometric surveys reach unprecedented statistical precision, systematic uncertainties increasingly dominate large-scale structure probes relying on galaxy number density. Defining the final survey footprint is critical, as it excludes regions affected by artefacts or suboptimal observing conditions. For galaxy clustering, spatially varying observational systematics, such as seeing, are a leading source of bias. Template maps of contaminants are used to derive spatially dependent corrections, but extreme values may fall outside the applicability range of mitigation methods, compromising correction reliability. The complexity and accuracy of systematics modelling depend on footprint conservativeness, with aggressive masking enabling simpler, robust mitigation. We present a unified approach to define the DES Year 6 joint footprint, integrating observational systematics templates and artefact indicators that degrade mitigation performance. This removes extreme values from an initial seed footprint, leading to the final joint footprint. By evaluating the DES Year 6 lens sample MagLim++ plus plus on this footprint, we enhance the Iterative Systematics Decontamination (ISD) method, detecting non-linear systematic contamination and improving correction accuracy. While the mask's impact on clustering is less significant than systematics decontamination, it remains non-negligible, comparable to statistical uncertainties in certain w(theta) scales and redshift bins. Supporting coherent analyses of galaxy clustering and cosmic shear, the final footprint spans 4031.04 deg2, setting the basis for DES Year 6 1x2pt, 2x2pt, and 3x2pt analyses. This work highlights how targeted masking strategies optimise the balance between statistical power and systematic control in Stage-III and -IV surveys.</div>
-            <div class="mt-3">
-        <div class="arxiv-links mt-2">
-            <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2509.07943" target="_blank">arXiv</a>
-            <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2509.07943" target="_blank">PDF</a>
-            <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2509.07943" target="_blank">ADS</a>
-        </div>
-    </div>
-            <div class="mt-2">
-        <div class="arxiv-scores">
-            <span class="badge bg-success">Total Score: 51.7</span>
-            <span class="badge bg-info text-dark">Author Score: 8.50</span>
-            <span class="badge bg-primary">Semantic Score: 0.92</span>
-        </div>
-    
-        </div>
-    </div>
-    
-    <div class="arxiv-card card mb-4">
-        <div class="arxiv-title card-header">3. Parity Violation in Galaxy Shapes: Primordial Non-Gaussianity</div>
-        <div class="arxiv-abstract card-body">
-            <div class="arxiv-meta mb-3"><strong>Toshiki Kurita, Drew Jamieson, Eiichiro Komatsu, Fabian Schmidt</strong></div>
-            <div class="tldr-section mb-3">
-                <p class="fst-italic text-muted"><strong>TLDR:</strong> Using these bias parameters, we forecast IA's constraining power, assuming data from the Dark Energy Spectroscopic Instrument (DESI) and the Rubin Observatory Legacy Survey of Space and Time (LSST).</p>
+        
+                
+            <div class="arxiv-scores">
+                <span class="badge bg-info text-dark">Author: 0</span>
+                <span class="badge bg-primary">Title: 6</span>
+                <span class="badge bg-secondary">Abstract: 5</span>
             </div>
-            <div class="arxiv-abstract-text">We present a comprehensive study of galaxy intrinsic alignment (IA) as a probe of parity-violating primordial non-Gaussianity (PNG). Within the effective field theory (EFT) framework, we show that the parity-odd IA power spectrum is sensitive to the collapsed limit of the parity-odd primordial trispectrum. For a $U(1)$-gauge inflationary model, the IA power spectrum is proportional to the power spectrum of the curvature perturbation, $P_\zeta(k) \propto k^{-3}$. However, the proportionality constants contain not only the PNG amplitude but also undetermined EFT bias parameters. We use $N$-body simulations to determine the bias parameters for dark matter halos. Using these bias parameters, we forecast IA's constraining power, assuming data from the Dark Energy Spectroscopic Instrument (DESI) and the Rubin Observatory Legacy Survey of Space and Time (LSST). We find that the IA power spectrum can improve the current limits on the amplitude of parity-violating PNG derived from galaxy four-point correlation and CMB trispectrum analyses. Moreover, galaxy shapes are complementary to these probes as they are sensitive to different scales and trispectrum configurations. Beyond galaxy shapes, we develop a new method to generate initial conditions for simulations and forward models from the parity-odd trispectrum with an enhanced collapsed limit.</div>
-            <div class="mt-3">
-        <div class="arxiv-links mt-2">
-            <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2509.08787" target="_blank">arXiv</a>
-            <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2509.08787" target="_blank">PDF</a>
-            <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2509.08787" target="_blank">ADS</a>
-        </div>
-    </div>
-            <div class="mt-2">
-        <div class="arxiv-scores">
-            <span class="badge bg-success">Total Score: 26.4</span>
-            <span class="badge bg-info text-dark">Author Score: 3.45</span>
-            <span class="badge bg-primary">Semantic Score: 0.92</span>
-        </div>
-    
-        </div>
-    </div>
-    
-    <div class="arxiv-card card mb-4">
-        <div class="arxiv-title card-header">4. Mixed Dark Matter and Galaxy Clustering: The Importance of Relative Perturbations</div>
-        <div class="arxiv-abstract card-body">
-            <div class="arxiv-meta mb-3"><strong>Şafak Çelik, Fabian Schmidt</strong></div>
-            <div class="tldr-section mb-3">
-                <p class="fst-italic text-muted"><strong>TLDR:</strong> In such mixed dark matter (MDM) scenarios, even a subdominant warm component can introduce distinctive signatures via its free-streaming effects, altering the evolution of density and velocity perturbations.</p>
-            </div>
-            <div class="arxiv-abstract-text">We develop a perturbative model to describe large-scale structure in cosmologies where dark matter consists of a mixture of cold (CDM) and warm (WDM) components. In such mixed dark matter (MDM) scenarios, even a subdominant warm component can introduce distinctive signatures via its free-streaming effects, altering the evolution of density and velocity perturbations. We present linear-order solutions for both total and relative perturbations in the two-fluid system, identifying novel contributions to galaxy bias caused by the relative density and velocity modes between the components. Incorporating these effects into the galaxy bias expansion, we compute the linear galaxy power spectrum in both real and redshift space. Using Fisher matrix forecasts, we assess the sensitivity of upcoming surveys such as DESI and PFS to MDM scenarios. Our results demonstrate that neglecting relative perturbations can lead to significant biases in inferred constraints on the warm dark matter fraction, particularly for lighter WDM masses ($\lesssim 150~\mathrm{eV}$ and $\lesssim 80~\mathrm{eV}$) for PFS and DESI, respectively. This framework provides a consistent and generalizable approach for incorporating multi-component dark matter dynamics into galaxy clustering analyses.</div>
-            <div class="mt-3">
-        <div class="arxiv-links mt-2">
-            <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2508.21481" target="_blank">arXiv</a>
-            <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2508.21481" target="_blank">PDF</a>
-            <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2508.21481" target="_blank">ADS</a>
-        </div>
-    </div>
-            <div class="mt-2">
-        <div class="arxiv-scores">
-            <span class="badge bg-success">Total Score: 23.1</span>
-            <span class="badge bg-info text-dark">Author Score: 2.78</span>
-            <span class="badge bg-primary">Semantic Score: 0.92</span>
-        </div>
-    
-        </div>
-    </div>
-    
-    <div class="arxiv-card card mb-4">
-        <div class="arxiv-title card-header">5. Implications of SPT and eROSITA cosmologies for Planck cluster number counts and t-SZ power spectrum</div>
-        <div class="arxiv-abstract card-body">
-            <div class="arxiv-meta mb-3"><strong>G. Aymerich, M. Douspis, N. Battaglia, N. Aghanim, L. Salvati, G. W. Pratt, G. Fabbian</strong></div>
-            <div class="tldr-section mb-3">
-                <p class="fst-italic text-muted"><strong>TLDR:</strong> We illustrate this by deriving the implications of the best-fit cosmologies from the recent SPT and eROSITA cluster number counts analyses on the Planck thermal Sunyaev-Zeldovich (t-SZ) probes.</p>
-            </div>
-            <div class="arxiv-abstract-text">Comparison between cosmological studies is usually performed in a statistical manner at the level of the posteriors of cosmological parameters. In this Letter, we show how this approach poorly reflects the differences between cosmological analyses, when applied to cosmological studies using galaxy cluster abundances. We illustrate this by deriving the implications of the best-fit cosmologies from the recent SPT and eROSITA cluster number counts analyses on the Planck thermal Sunyaev-Zeldovich (t-SZ) probes. We first fix the mass calibration, and find that the Planck cluster sample would theoretically contain 498 clusters with the SPT cosmology, and 1098 clusters with the eROSITA cosmology, instead of the 439 clusters observed. We then fit the Planck number counts to both cosmologies, only varying the hydrostatic mass bias, and find required biases of $0.790 \pm 0.070$ and $0.630 \pm 0.034$ for SPT and eROSITA respectively, instead of the $0.844^{+0.055}_{-0.062}$ derived in Aymerich et al. (2025). Lastly, we compute the expected t-SZ power spectrum obtained from the SPT and eROSITA cosmologies, and compare these to the Planck measurement. While the predicted SPT angular power spectrum is in good agreement with the Planck measurements, the normalisation of the predicted eROSITA angular power spectrum is two times higher at all scales. These two tests highlight the power of comparing predicted cluster abundances and t-SZ power spectra to measured data in a physically interpretable way.</div>
-            <div class="mt-3">
-        <div class="arxiv-links mt-2">
-            <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2509.08673" target="_blank">arXiv</a>
-            <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2509.08673" target="_blank">PDF</a>
-            <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2509.08673" target="_blank">ADS</a>
-        </div>
-    </div>
-            <div class="mt-2">
-        <div class="arxiv-scores">
-            <span class="badge bg-success">Total Score: 11.3</span>
-            <span class="badge bg-info text-dark">Author Score: 0.46</span>
-            <span class="badge bg-primary">Semantic Score: 0.91</span>
-        </div>
-    
-        </div>
-    </div>
-    
-    <div class="arxiv-card card mb-4">
-        <div class="arxiv-title card-header">6. J-PAS: Forecasting constraints on Neutrino Masses</div>
-        <div class="arxiv-abstract card-body">
-            <div class="arxiv-meta mb-3">
-            <div onclick="toggleAuthors(this)" style="cursor: pointer;">
-                <strong>
-                    <span class="author-short">Gabriel Rodrigues, Antonio J. Cuesta, Jailson Alcaniz, Miguel Aparicio Resco, Antonio L. Maroto, Manuel Masip, Jamerson G. Rodrigues, Felipe B. M. dos Santos, Javier de Cruz Pérez, Jorge Enrique García-Farieta, et al.</span>
-                    <span class="author-full" style="display: none;">Gabriel Rodrigues, Antonio J. Cuesta, Jailson Alcaniz, Miguel Aparicio Resco, Antonio L. Maroto, Manuel Masip, Jamerson G. Rodrigues, Felipe B. M. dos Santos, Javier de Cruz Pérez, Jorge Enrique García-Farieta, Clarissa Siqueira, Fuxing Qin, Yuting Wang, Gong-Bo Zhao, Carlos Hernández-Monteagudo, Valerio Marra, Raul Abramo, Narciso Benítez, Silvia Bonoli, Saulo Carneiro, Javier Cenarro, David Cristóbal-Hornillos, Renato Dupke, Alessandro Ederoclite, Antonio Hernán-Caballero, Carlos López-Sanjuan, Antonio Marín-Franch, Claudia Mendes de Oliveira, Mariano Moles, Laerte Sodré Jr., Keith Taylor, Jesús Varela, Héctor Vázquez Ramió</span>
-                </strong>
-                <a class="author-toggle text-primary" style="text-decoration: none;"> (show all)</a>
+        
             </div>
         </div>
-            <div class="tldr-section mb-3">
-                <p class="fst-italic text-muted"><strong>TLDR:</strong> In this work, we present a forecast based on the Fisher matrix method to establish its sensitivity to the sum of the neutrino masses.</p>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">5.5. Bright [CII]158$\mu$m Streamers as a Beacon for Giant Galaxy Formation in SPT2349$-$56 at $z=4.3$ <span class="badge bg-warning text-dark">cii</span></div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-2"><strong>Nikolaus Sulzenauer, Axel Wei{\ss}, Ryley Hill, Scott C. Chapman, Manuel Aravena, Veronica J. Dike, Anthony Gonzalez, Duncan MacIntyre, Desika Narayanan, Kedar A. Phadke, Vismaya R. Pillai, Ana C. Posses, Douglas Rennehan, Amelie Saintonge, Justin S. Spilker, Manuel Solimano, Joel Tsuchitori, Joaquin D. Vieira, David Vizgan, Dazhi Zhou</strong></div>
+                <div>arXiv:2509.08035v1 Announce Type: new  Abstract: Observations of extreme starbursts, often located in the cores of protoclusters, challenge the classical bottom-up galaxy formation paradigm. Giant elliptical galaxies at $z=0$ must have assembled rapidly, possibly within few 100 Myr through an extreme growth phase at high-redshift, characterized by elevated star-formation rates of several thousand solar masses per year distributed over concurrent, gas-rich mergers. We present a novel view of the $z=4.3$ protocluster core SPT2349$-$56 from sensitive multi-cycle ALMA dust continuum and [CII]158$\mu$m line observations. Distributed across 60 kpc, a highly structured gas reservoir with a line luminosity of $L_\mathrm{[CII]}=3.0\pm0.2\times10^9$ $L_\odot$ and an inferred cold gas mass of $M_{gas}= 8.9\pm0.7\times10^{9}$ $M_\odot$ is found surrounding the central massive galaxy triplet. Like ``beads on a string'', the newly-discovered [CII] streamers fragment into a few kpc-spaced and turbulent clumps that have a similar column density as local Universe spiral galaxy arms at $\Sigma_{gas}=20$--$60$ $M_\odot$ pc$^{-2}$. For a dust temperature of 30 K, the [CII] emission from the ejected clumps carry $\gtrsim$3% of the FIR luminosity, translating into an exceptionally low mass-to-light ratio of $\alpha_\mathrm{[CII]}=2.95\pm0.3$ $M_\odot$ $L_\odot^{-1}$, indicative of shock-heated molecular gas. In phase space, about half of the galaxies in the protocluster core populate the same caustic as the [CII] streamers ($r/r_{vir}\times|\Delta v|/\sigma_{vir}\approx0.1$), suggesting angular momentum dissipation via tidal ejection while the brightest cluster galaxy (BCG) is assembling. Our findings provide new evidence for the importance of tidal ejections of [CII]-bright, shocked material following multiple major mergers that might represent a landmark phase in the $z\gtrsim4$ co-evolution of BCGs with their hot, metal enriched atmospheres.</div>
+                
+            <div class="arxiv-links mt-2">
+                <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/" target="_blank">arXiv</a>
+                <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/" target="_blank">PDF</a>
+                <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:" target="_blank">ADS</a>
             </div>
-            <div class="arxiv-abstract-text">The large-scale structure survey J-PAS is taking data since October 2023. In this work, we present a forecast based on the Fisher matrix method to establish its sensitivity to the sum of the neutrino masses. We adapt the Fisher Galaxy Survey Code (FARO) to account for the neutrino mass under various configurations applied to galaxy clustering measurements. This approach allows us to test the sensitivity of J-PAS to the neutrino mass across different tracers, with and without non-linear corrections, and under varying sky coverage. We perform our forecast for two cosmological models: $\Lambda CDM + \sum m_\nu$ and $w_0w_a CDM + \sum m_\nu$. We combine our J-PAS forecast with Cosmic Microwave Background (CMB) data from the Planck Collaboration and Type Ia supernova (SN) data from Pantheon Plus. Our analysis shows that, for a sky coverage of 8,500 square degrees, J-PAS galaxy clustering data alone will constrain the sum of the neutrino masses to an upper limit at 95\% C.L of $\sum m_\nu < 0.32$ eV for the $\Lambda CDM + \sum m_\nu$ model, and $\sum m_\nu < 0.36$ eV for the $w_0w_a CDM + \sum m_\nu$ model. When combined with Planck data, the upper limit improves significantly. For J-PAS+Planck at 95\% C.L, we find $\sum m_\nu < 0.061$ eV for the $\Lambda CDM + \sum m_\nu$ model, and for J-PAS+Planck+Pantheon Plus, we obtain $\sum m_\nu < 0.12$ eV for the $w_0w_a CDM + \sum m_\nu$ model. These results demonstrate that J-PAS clustering measurements can play a crucial role in addressing challenges in the neutrino sector, including potential tensions between cosmological and terrestrial measurements of the neutrino mass, as well as in determining the mass ordering.</div>
-            <div class="mt-3">
-        <div class="arxiv-links mt-2">
-            <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2507.03740" target="_blank">arXiv</a>
-            <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2507.03740" target="_blank">PDF</a>
-            <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2507.03740" target="_blank">ADS</a>
-        </div>
-    </div>
-            <div class="mt-2">
-        <div class="arxiv-scores">
-            <span class="badge bg-success">Total Score: 10.6</span>
-            <span class="badge bg-info text-dark">Author Score: 0.31</span>
-            <span class="badge bg-primary">Semantic Score: 0.91</span>
-        </div>
-    
-        </div>
-    </div>
-    
-    <div class="arxiv-card card mb-4">
-        <div class="arxiv-title card-header">7. An improved model for the effect of correlated Si-III absorption on the one-dimensional Lyman-$α$ forest power spectrum</div>
-        <div class="arxiv-abstract card-body">
-            <div class="arxiv-meta mb-3"><strong>Ke Ma, James S. Bolton, Vid Irsic, Prakash Gaikwad, Ewald Puchwein</strong></div>
-            <div class="tldr-section mb-3">
-                <p class="fst-italic text-muted"><strong>TLDR:</strong> Our model remains in good agreement with earlier work at large scales ($k \lesssim 0.06\rm\,s\,km^{-1}$) and it has little effect on existing warm dark matter constraints from the Ly$\alpha$ forest when adopting a physically motivated prior on the silicon abundance.</p>
+        
+                
+            <div class="arxiv-scores">
+                <span class="badge bg-info text-dark">Author: 0</span>
+                <span class="badge bg-primary">Title: 7</span>
+                <span class="badge bg-secondary">Abstract: 3</span>
             </div>
-            <div class="arxiv-abstract-text">We present an analysis of Si-III absorption and its effect on the 1D Ly$\alpha$ forest power spectrum using the Sherwood-Relics hydrodynamical simulation suite. In addition to the well-understood oscillations arising from the Ly$\alpha$--Si-III cross correlation, we find an enhancement in small-scale power that has been ignored in previous studies. We therefore develop a new analytical fitting function that captures two critical effects that have previously been neglected: distinct Ly$\alpha$ and Si-III line profiles, and a variable ratio for coeval Ly$\alpha$ and Si-III optical depths. In contrast to earlier work, we also predict amplitudes for the Si-III power spectrum and Ly$\alpha$--Si-III cross power spectrum that decrease toward lower redshift due to the hardening metagalactic UV background spectrum at $z\lesssim 3.5$. The fitting function is validated by comparison against multiple simulated datasets at redshifts $2.2\leq z \leq 5.0$ and wavenumbers $k < 0.2\rm\,s\,km^{-1}$. Our model remains in good agreement with earlier work at large scales ($k \lesssim 0.06\rm\,s\,km^{-1}$) and it has little effect on existing warm dark matter constraints from the Ly$\alpha$ forest when adopting a physically motivated prior on the silicon abundance. It will, however, be an essential consideration for future, high-precision Ly$\alpha$ forest power spectrum measurements.</div>
-            <div class="mt-3">
-        <div class="arxiv-links mt-2">
-            <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2509.08613" target="_blank">arXiv</a>
-            <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2509.08613" target="_blank">PDF</a>
-            <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2509.08613" target="_blank">ADS</a>
-        </div>
-    </div>
-            <div class="mt-2">
-        <div class="arxiv-scores">
-            <span class="badge bg-success">Total Score: 9.7</span>
-            <span class="badge bg-info text-dark">Author Score: 0.25</span>
-            <span class="badge bg-primary">Semantic Score: 0.85</span>
-        </div>
-    
-        </div>
-    </div>
-    
-    <div class="arxiv-card card mb-4">
-        <div class="arxiv-title card-header">8. Constraints from the Giant Arc in Abell 370. A New Framework for Understanding Systematic Errors in Cluster Lens Modeling. IV. Constraints from the Giant Arc in Abell 370</div>
-        <div class="arxiv-abstract card-body">
-            <div class="arxiv-meta mb-3"><strong>Lana Eid, Charles R. Keeton</strong></div>
-            <div class="tldr-section mb-3">
-                <p class="fst-italic text-muted"><strong>TLDR:</strong> We seek to determine whether improvements to the lens model and reconstructed source merit the difficulty of handling the extra constraints.</p>
-            </div>
-            <div class="arxiv-abstract-text">We aim to improve cluster lens modeling and source reconstruction by utilizing the full information in giant, caustic-crossing arcs lensed by galaxy clusters. Lens models are generally constrained using image positions and assuming point sources, but spatially extended giant arcs provide more constraints; however, they require a more complex model that accounts for the structure of the extended source. We seek to determine whether improvements to the lens model and reconstructed source merit the difficulty of handling the extra constraints. We choose the spatially extended $z=0.725$ giant arc in the $z=0.375$ Abell 370 galaxy cluster field for our study. We present 1) a series of pixel-based source reconstructions for cluster mass models exploring the range of uncertainties in our fiducial model, 2) a similar analysis done using a prototype \textit{python} de-lensing code for cluster mass models from each of the Hubble Frontier Fields modeling teams, 3) an optimized model with pixel-based source reconstructions, and 4) and an investigation of how our optimized model affects the cluster mass model locally and globally in the highest-magnification regions. We find that our optimized model 1) is able to correct resolution-limited assumptions in cluster model inputs local to the arc, 2) has significantly smaller arc model residuals than results from the standard Hubble Frontier Fields models, and 3) affects the critical curves and therefore the information derived from highest-magnification zones most significantly in regions local to the arc.</div>
-            <div class="mt-3">
-        <div class="arxiv-links mt-2">
-            <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2509.08227" target="_blank">arXiv</a>
-            <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2509.08227" target="_blank">PDF</a>
-            <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2509.08227" target="_blank">ADS</a>
-        </div>
-    </div>
-            <div class="mt-2">
-        <div class="arxiv-scores">
-            <span class="badge bg-success">Total Score: 8.9</span>
-            <span class="badge bg-info text-dark">Author Score: 0.00</span>
-            <span class="badge bg-primary">Semantic Score: 0.89</span>
-        </div>
-    
-        </div>
-    </div>
-    
-    <div class="arxiv-card card mb-4">
-        <div class="arxiv-title card-header">9. Search for a photon peak from keV-scale dark matter annihilation with NuSTAR: Constraints on $\langle σv \rangle$ after 11 years of observations</div>
-        <div class="arxiv-abstract card-body">
-            <div class="arxiv-meta mb-3"><strong>E. I. Zakharov, V. V. Barinov, D. S. Gorbunov, R. A. Krivonos, A. A. Mukhin</strong></div>
-            <div class="tldr-section mb-3">
-                <p class="fst-italic text-muted"><strong>TLDR:</strong> We model the resulting diffuse X-ray spectrum over the 3-20 keV energy range and search for line-like spectral features that may arise from the annihilation of dark matter particles into photons.</p>
-            </div>
-            <div class="arxiv-abstract-text">We report new constraints on the velocity-independent annihilation cross section $\langle \sigma v \rangle$ of keV-scale dark matter particles based on 11 years of observations with the NuSTAR X-ray telescope. Using the unfocused stray light mode of the instrument, which provides a wide field-of-view and a stable instrumental background, we perform a sensitive search for photon signatures from dark matter annihilation in the Galactic halo. We model the resulting diffuse X-ray spectrum over the 3-20 keV energy range and search for line-like spectral features that may arise from the annihilation of dark matter particles into photons. No statistically significant excess over the expected astrophysical background is found. We therefore place upper limits on $\langle \sigma v \rangle$ as a function of dark matter mass, assuming a velocity-independent s-wave annihilation and several Galactic dark matter profiles. Across most of the explored mass range our results provide the strongest X-ray constraints to date, reaching the level of $\langle\sigma v\rangle \lesssim 10^{-33}$ -- $10^{-34}$ cm$^3$ s$^{-1}$, and they are complementary to the most recent bounds derived from SRG/ART-XC observations.</div>
-            <div class="mt-3">
-        <div class="arxiv-links mt-2">
-            <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2509.08506" target="_blank">arXiv</a>
-            <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2509.08506" target="_blank">PDF</a>
-            <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2509.08506" target="_blank">ADS</a>
-        </div>
-    </div>
-            <div class="mt-2">
-        <div class="arxiv-scores">
-            <span class="badge bg-success">Total Score: 8.8</span>
-            <span class="badge bg-info text-dark">Author Score: 0.00</span>
-            <span class="badge bg-primary">Semantic Score: 0.88</span>
-        </div>
-    
-        </div>
-    </div>
-    
-    <div class="arxiv-card card mb-4">
-        <div class="arxiv-title card-header">10. Frequent Extreme Galaxy-scale Outflows among Luminous Early Quasars</div>
-        <div class="arxiv-abstract card-body">
-            <div class="arxiv-meta mb-3">
-            <div onclick="toggleAuthors(this)" style="cursor: pointer;">
-                <strong>
-                    <span class="author-short">Weizhe Liu, Xiaohui Fan, Huan Li, Richard Green, Jinyi Yang, Xiangyu Jin, Jianwei Lyu, Maria Pudoka, Yongda Zhu, Eduardo Banados, et al.</span>
-                    <span class="author-full" style="display: none;">Weizhe Liu, Xiaohui Fan, Huan Li, Richard Green, Jinyi Yang, Xiangyu Jin, Jianwei Lyu, Maria Pudoka, Yongda Zhu, Eduardo Banados, Silvia Belladitta, Thomas Connor, Tiago Costa, Roberto Decarli, Anna-Christina Eilers, Hyunsung Jun, Madeline A. Marshall, Chiara Mazzucchelli, Jan-Torge Schindler, Yue Shen, Sylvain Veilleux, Julien Wolf, Huanian Zhang, Mingyang Zhuang, Siwei Zou, Mingyu Li</span>
-                </strong>
-                <a class="author-toggle text-primary" style="text-decoration: none;"> (show all)</a>
+        
             </div>
         </div>
-            <div class="tldr-section mb-3">
-                <p class="fst-italic text-muted"><strong>TLDR:</strong> Here we report a high detection rate (6/27) of exceptionally fast and powerful galaxy-scale outflows traced by [O III] emission in z $\sim$ 5-6 luminous quasars as revealed by the James Webb Space Telescope (JWST), with velocity up to $\sim$8400 km s$^{-1}$ and order-of-magnitude kinetic energy outflow rates up to $\sim$260% the observed quasar bolometric luminosities.</p>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">4.8. Resonant neutrino self-interactions: Insights from the full shape galaxy power spectrum</div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-2"><strong>Hern\'an E. Noriega, Josue De-Santiago, Gabriela Garcia-Arroyo, Jorge Venzor, Abdel P\'erez-Lorenzana</strong></div>
+                <div>arXiv:2506.07994v2 Announce Type: replace  Abstract: This paper investigates resonant neutrino self-interactions in cosmology by employing, for the first time, the effective field theory of large-scale structure to model their impact on the matter distribution up to mildly nonlinear scales. We explore a broad range of mediator masses in two main analyses: one combining BOSS Full Shape (FS) galaxy clustering with Big Bang Nucleosynthesis (BBN), and another combining FS with Planck Cosmic Microwave Background (CMB) data. Our results place the strongest cosmological constraints to date on the resonant self interactions when using FS+Planck data, reaching up to $g_\nu< 10.8 \times 10^{-14}$ at $95\%$ confidence for the 1 eV mediator. Notably, FS+BBN can constrain the interaction for the 10 eV mediator independently of CMB data, yielding $g_\nu < 7.33 \times 10^{-12}$ at $95\%$ confidence. Our results suggest that resonant neutrino self-interactions are unlikely to resolve existing cosmological tensions within the standard $\Lambda$CDM framework.</div>
+                
+            <div class="arxiv-links mt-2">
+                <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/" target="_blank">arXiv</a>
+                <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/" target="_blank">PDF</a>
+                <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:" target="_blank">ADS</a>
             </div>
-            <div class="arxiv-abstract-text">The existence of abundant post-starburst/quiescent galaxies just $\sim$1-2 Gyrs after the Big Bang challenges our current paradigm of galaxy evolution. Cosmological simulations suggest that quasar feedback is likely the most promising mechanism responsible for such rapid quenching. Here we report a high detection rate (6/27) of exceptionally fast and powerful galaxy-scale outflows traced by [O III] emission in z $\sim$ 5-6 luminous quasars as revealed by the James Webb Space Telescope (JWST), with velocity up to $\sim$8400 km s$^{-1}$ and order-of-magnitude kinetic energy outflow rates up to $\sim$260% the observed quasar bolometric luminosities. This fraction is $\gtrsim$6.6 times larger than that in luminosity-matched comparison samples at z $\sim$ 1.5-3.5 (0/58) and z $<$ 1 (5/148). These extreme outflows are comparable to or even faster than the most rapid [O III] outflows reported at z $\lesssim$ 3, and could reach the circumgalactic medium (CGM) or even the intergalactic medium (IGM). The average kinetic energy outflow rate of our entire sample is $\sim$230$\times$ higher than that at cosmic noon. The substantially higher frequency of outflows with energetics well above the threshold for negative feedback in our sample strongly suggests that quasar feedback plays a significant role in efficiently quenching/regulating early massive galaxies.</div>
-            <div class="mt-3">
-        <div class="arxiv-links mt-2">
-            <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2509.08793" target="_blank">arXiv</a>
-            <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2509.08793" target="_blank">PDF</a>
-            <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2509.08793" target="_blank">ADS</a>
-        </div>
-    </div>
-            <div class="mt-2">
-        <div class="arxiv-scores">
-            <span class="badge bg-success">Total Score: 8.7</span>
-            <span class="badge bg-info text-dark">Author Score: 0.02</span>
-            <span class="badge bg-primary">Semantic Score: 0.86</span>
-        </div>
-    
-        </div>
-    </div>
-    
-    <div class="arxiv-card card mb-4">
-        <div class="arxiv-title card-header">11. Multiverse Predictions for Habitability: Fundamental Physics and Galactic Habitability</div>
-        <div class="arxiv-abstract card-body">
-            <div class="arxiv-meta mb-3"><strong>McCullen Sandora</strong></div>
-            <div class="tldr-section mb-3">
-                <p class="fst-italic text-muted"><strong>TLDR:</strong> The particle physics effects we consider include constraints on the Higgs vacuum expectation value from big bang nucleosynthesis and supernovae, grand unified theories (GUTs), and standard model stability.</p>
+        
+                
+            <div class="arxiv-scores">
+                <span class="badge bg-info text-dark">Author: 0</span>
+                <span class="badge bg-primary">Title: 6</span>
+                <span class="badge bg-secondary">Abstract: 2</span>
             </div>
-            <div class="arxiv-abstract-text">In the multiverse hypothesis, a range of universes exist with differing values of our physical constants. Here, we investigate how the probabilities of observing our values of these constants depend on the assumptions made about the theories governing particle physics and cosmology, along with habitability. The particle physics effects we consider include constraints on the Higgs vacuum expectation value from big bang nucleosynthesis and supernovae, grand unified theories (GUTs), and standard model stability. Cosmology effects we consider are different theories of dark matter and baryogenesis, and for galactic habitability effects we include star formation efficiency, stellar encounters, supernova explosions, and active galactic nuclei. We find the following to be disfavored in the multiverse scenario: flexible GUTs, pessimistic galactic disruption rates, some origin of life theories, and freeze-out dark matter with high energy baryogenesis. These predictions can be tested in future experiments to either confirm or rule out the multiverse.</div>
-            <div class="mt-3">
-        <div class="arxiv-links mt-2">
-            <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2509.08220" target="_blank">arXiv</a>
-            <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2509.08220" target="_blank">PDF</a>
-            <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2509.08220" target="_blank">ADS</a>
-        </div>
-    </div>
-            <div class="mt-2">
-        <div class="arxiv-scores">
-            <span class="badge bg-success">Total Score: 8.7</span>
-            <span class="badge bg-info text-dark">Author Score: 0.00</span>
-            <span class="badge bg-primary">Semantic Score: 0.87</span>
-        </div>
-    
-        </div>
-    </div>
-    
-    <div class="arxiv-card card mb-4">
-        <div class="arxiv-title card-header">12. Comparative analysis of machine learning techniques for feature selection and classification of Fast Radio Bursts</div>
-        <div class="arxiv-abstract card-body">
-            <div class="arxiv-meta mb-3"><strong>Ailton J. B. Júnior, Jéferson A. S. Fortunato, Leonardo J. Silvestre, Thonimar V. Alencar, Wiliam S. Hipólito-Ricaldi</strong></div>
-            <div class="tldr-section mb-3">
-                <p class="fst-italic text-muted"><strong>TLDR:</strong> Finally, we identify a set of FRBs currently labeled as non-repeaters that consistently cluster with known repeaters across all methods, highlighting promising candidates for future follow-up observations and reinforcing the utility of unsupervised approaches in FRB population studies.</p>
+        
             </div>
-            <div class="arxiv-abstract-text">Fast Radio Bursts (FRBs) are millisecond-duration radio transients of extragalactic origin, exhibiting a wide range of physical and observational properties. Distinguishing between repeating and non-repeating FRBs remains a key challenge in understanding their nature. In this work, we apply unsupervised machine learning techniques to classify FRBs based on both primary observables from the CHIME catalog and physically motivated derived features. We evaluate three hybrid pipelines combining dimensionality reduction with clustering: Principal Component Analysis (PCA) + k-means, t-distributed Stochastic Neighbor Embedding (t-SNE) + Hierarchical Density-Based Spatial Clustering of Applications with Noise (HDBSCAN), and t-SNE + Spectral Clustering. To identify optimal hyperparameters, we implement a comprehensive grid search using a custom scoring function that prioritizes recall while penalizing excessive cluster fragmentation and noise. Feature relevance is assessed using principal component loadings, mutual information with the known repeater label, and permutation-based F\textsubscript{2} score sensitivity. Our results demonstrate that the derived features, including redshift, luminosity, and spectral properties, such as the spectral index and the spectral running, significantly enhance the classification performance. Finally, we identify a set of FRBs currently labeled as non-repeaters that consistently cluster with known repeaters across all methods, highlighting promising candidates for future follow-up observations and reinforcing the utility of unsupervised approaches in FRB population studies.</div>
-            <div class="mt-3">
-        <div class="arxiv-links mt-2">
-            <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2506.18854" target="_blank">arXiv</a>
-            <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2506.18854" target="_blank">PDF</a>
-            <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2506.18854" target="_blank">ADS</a>
         </div>
-    </div>
-            <div class="mt-2">
-        <div class="arxiv-scores">
-            <span class="badge bg-success">Total Score: 8.3</span>
-            <span class="badge bg-info text-dark">Author Score: 0.00</span>
-            <span class="badge bg-primary">Semantic Score: 0.83</span>
-        </div>
-    
-        </div>
-    </div>
-    
-    <div class="arxiv-card card mb-4">
-        <div class="arxiv-title card-header">13. New test of modified gravity with gravitational wave experiments</div>
-        <div class="arxiv-abstract card-body">
-            <div class="arxiv-meta mb-3"><strong>N. M. Jiménez Cruz, Flavio C. Sánchez, Gianmassimo Tasinato</strong></div>
-            <div class="tldr-section mb-3">
-                <p class="fst-italic text-muted"><strong>TLDR:</strong> We derive the corresponding response functions for ground-based interferometers, pulsar timing arrays, and astrometric observables, and we construct an optimal estimator together with simple Fisher forecasts for pulsar-timing sensitivity.</p>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">4.7. RIOJA. JWST and ALMA unveil the inhomogeneous and complex ISM structure in a star-forming galaxy at $z=6.81$</div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-2"><strong>Mitsutaka Usui, Ken Mawatari, Javier \'Alvarez-M\'arquez, Takuya Hashimoto, Yuma Sugahara, Rui Marques-Chaves, Akio K. Inoue, Luis Colina, Santiago Arribas, Carmen Blanco-Prieto, Yurina Nakazato, Naoki Yoshida, Tom J. L. C. Bakx, Daniel Ceverino, Luca Costantin, Alejandro Crespo G\'omez, Masato Hagimoto, Hiroshi Matsuo, Wataru Osone, Yi W. Ren, Yoshinobu Fudamoto, Takeshi Hashigaya, Miguel Pereira-Santaella, Yoichi Tamura</strong></div>
+                <div>arXiv:2507.02054v2 Announce Type: replace  Abstract: We report the discovery of a complex, density-stratified interstellar medium (ISM) in the star-forming galaxy COS-2987 at $z = 6.81$, revealed by the unprecedented synergy between JWST/NIRSpec IFS and ALMA observations. These observations detect key emission lines, including \oii~$\lambda\lambda$~3727, 3730, \oiii~4364, \oiii~$\lambda\lambda$~4960, 5008, \oiii\ 88 \micron, as well as H$\alpha$ and H$\beta$. JWST spectroscopy alone indicates ISM properties that are typical for galaxies at $z\sim7$. These include low dust extinction ($A_{\rm V} \approx 0.14$ mag), moderate electron density ($n_{\rm e} \approx 500$~cm$^{-3}$), and low gas-phase metallicity ($\sim10\%$). However, the strong far-infrared \oiii\ 88 \micron\ emission detected by ALMA cannot be explained by a single-component ionized medium with uniform electron density and temperature. Instead, a two-component ISM model, comprising compact, high-temperature, high-density gas components ($T_e \approx 26,000$\,K; $n_e \approx 600~\mathrm{cm}^{-3}$) and an extended, cooler, lower-density component ($T_e \approx 8,000$\,K; $n_e \approx 50~\mathrm{cm}^{-3}$), successfully reproduces the observed line ratios of \oiii~88~\micron/\oiii~5008~\AA\ and \oiii~4364/\oiii~5008~\AA, with a volume ratio of 1 : 300 between the two components. Our results demonstrate that JWST alone probes only a fraction of the ISM and highlight the critical importance of combining JWST and ALMA to reveal the density-stratified ISM of early galaxies.</div>
+                
+            <div class="arxiv-links mt-2">
+                <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/" target="_blank">arXiv</a>
+                <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/" target="_blank">PDF</a>
+                <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:" target="_blank">ADS</a>
             </div>
-            <div class="arxiv-abstract-text">We propose a new strategy to probe non-tensorial polarizations in the stochastic gravitational-wave (GW) background. Averaging over polarization angles, we find that three-point correlations of the GW signal vanish for tensor and vector modes, while scalar modes generically leave a nonzero imprint. This property makes the GW bispectrum a distinctive and robust diagnostic of scalar polarizations predicted in theories beyond General Relativity. We derive the corresponding response functions for ground-based interferometers, pulsar timing arrays, and astrometric observables, and we construct an optimal estimator together with simple Fisher forecasts for pulsar-timing sensitivity. As a proof of principle, we show that second-order GWs sourced by primordial magnetogenesis can be characterized by large three-point functions. Our results demonstrate that GW three-point correlations provide a novel observational window on physics beyond General Relativity.</div>
-            <div class="mt-3">
-        <div class="arxiv-links mt-2">
-            <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2509.08273" target="_blank">arXiv</a>
-            <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2509.08273" target="_blank">PDF</a>
-            <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2509.08273" target="_blank">ADS</a>
-        </div>
-    </div>
-            <div class="mt-2">
-        <div class="arxiv-scores">
-            <span class="badge bg-success">Total Score: 8.3</span>
-            <span class="badge bg-info text-dark">Author Score: 0.00</span>
-            <span class="badge bg-primary">Semantic Score: 0.83</span>
-        </div>
-    
-        </div>
-    </div>
-    
-    <div class="arxiv-card card mb-4">
-        <div class="arxiv-title card-header">14. Tidal Suppression of Fuzzy Dark Matter Heating in Milky Way Satellite Galaxies</div>
-        <div class="arxiv-abstract card-body">
-            <div class="arxiv-meta mb-3"><strong>Yu-Ming Yang, Zhao-Chen Zhang, Xiao-Jun Bi, Peng-Fei Yin</strong></div>
-            <div class="tldr-section mb-3">
-                <p class="fst-italic text-muted"><strong>TLDR:</strong> However, these analyses have generally neglected the tidal influence of the Milky Way, which can substantially suppress the FDM-induced heating effect in satellites.</p>
+        
+                
+            <div class="arxiv-scores">
+                <span class="badge bg-info text-dark">Author: 0</span>
+                <span class="badge bg-primary">Title: 6</span>
+                <span class="badge bg-secondary">Abstract: 2</span>
             </div>
-            <div class="arxiv-abstract-text">Many previous studies have imposed stringent constraints on the particle mass of fuzzy dark matter (FDM) by analyzing observations of Galactic satellite galaxies, which show no significant evidence of the heating effect predicted by FDM. However, these analyses have generally neglected the tidal influence of the Milky Way, which can substantially suppress the FDM-induced heating effect in satellites. This oversight arises from computational challenges of accurately capturing the tidal effects in FDM simulations. In this study, we present a novel simulation framework that, for the first time, enables the simulation of an FDM-stellar system within an observationally motivated gravitational potential of the Milky Way. This framework incorporates the diverse Galactic components, including the gravitational influence of the Large Magellanic Cloud. Using the Fornax dwarf galaxy as a case study, we demonstrate that tidal effects significantly alleviate the tension between observational data and the predicted heating effect for an FDM particle mass of $m_a\sim 10^{-22}$ eV.</div>
-            <div class="mt-3">
-        <div class="arxiv-links mt-2">
-            <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2507.01686" target="_blank">arXiv</a>
-            <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2507.01686" target="_blank">PDF</a>
-            <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2507.01686" target="_blank">ADS</a>
-        </div>
-    </div>
-            <div class="mt-2">
-        <div class="arxiv-scores">
-            <span class="badge bg-success">Total Score: 7.9</span>
-            <span class="badge bg-info text-dark">Author Score: 0.00</span>
-            <span class="badge bg-primary">Semantic Score: 0.79</span>
-        </div>
-    
-        </div>
-    </div>
-    
-    <div class="arxiv-card card mb-4">
-        <div class="arxiv-title card-header">15. Unitary and Analytic Renormalisation of Cosmological Correlators</div>
-        <div class="arxiv-abstract card-body">
-            <div class="arxiv-meta mb-3"><strong>Diksha Jain, Enrico Pajer, Xi Tong</strong></div>
-            <div class="tldr-section mb-3">
-                <p class="fst-italic text-muted"><strong>TLDR:</strong> Imposing unitarity in the form of the cosmological optical theorem, we define a class of unitary and analytic $\eta$ regulators that agree with dim reg but feature considerable technical and conceptual simplifications.</p>
+        
             </div>
-            <div class="arxiv-abstract-text">Loop contributions to cosmological correlators and to the associated wavefunction are of key theoretical and phenomenological interest. Here, we investigate and compare different renormalisation schemes proposed in the literature to handle ultraviolet divergences and develop new schemes adapting $\eta$ regulators to de Sitter spacetime. We focus on one-loop contributions to the quadratic wavefunction coefficient of a shift-symmetric massless scalar in de Sitter spacetime, which is a good toy model of primordial curvature perturbations. We show that different implementations of dimensional regularisation agree with each other and with unitarity and scale invariance in the final renormalised result. Imposing unitarity in the form of the cosmological optical theorem, we define a class of unitary and analytic $\eta$ regulators that agree with dim reg but feature considerable technical and conceptual simplifications. We show that the imaginary part of all one-loop wavefunction coefficients is universally fixed in terms of the logarithmic running of the real part, under the assumptions of scale invariance, Bunch-Davies vacuum and light bulk fields. Our work resolves discrepancies in the literature, establishes regulator-independent predictions for the imaginary part at one loop, and provides a practical framework for computing quantum contributions to cosmological correlators.</div>
-            <div class="mt-3">
-        <div class="arxiv-links mt-2">
-            <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2509.02696" target="_blank">arXiv</a>
-            <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2509.02696" target="_blank">PDF</a>
-            <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2509.02696" target="_blank">ADS</a>
         </div>
-    </div>
-            <div class="mt-2">
-        <div class="arxiv-scores">
-            <span class="badge bg-success">Total Score: 7.6</span>
-            <span class="badge bg-info text-dark">Author Score: 0.00</span>
-            <span class="badge bg-primary">Semantic Score: 0.76</span>
-        </div>
-    
-        </div>
-    </div>
-    
-    <div class="arxiv-card card mb-4">
-        <div class="arxiv-title card-header">16. Gravitational radiation reaction around a static black hole surrounded by a Dehnen type dark matter halo</div>
-        <div class="arxiv-abstract card-body">
-            <div class="arxiv-meta mb-3"><strong>Amjad Ashoorioon, Roberto Casadio, Khadije Jafarzade, Mohammad B. Jahani Poshteh, Orlando Luongo</strong></div>
-            <div class="tldr-section mb-3">
-                <p class="fst-italic text-muted"><strong>TLDR:</strong> We consider the motion of a particle in the geometry of a Schwarzschild-like black hole embedded in a dark matter (DM) halo with Dehnen type density profile and calculate the orbital periods along with the evolution of the semi-latus rectum and eccentricity for extreme mass ratio inspirals (EMRIs).</p>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">3.7. The Small Magellanic Cloud through the lens of the James Webb Space Telescope : binaries and mass function within the galaxy outskirts</div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-2"><strong>M. V. Legnardi, F. Muratore, A. P. Milone, G. Cordoni, T. Ziliotto, E. Dondoglio, A. F. Marino, A. Mastrobuono-Battisti, E. Bortolan, E. P. Lagioia, M. Tailo</strong></div>
+                <div>arXiv:2509.08687v1 Announce Type: new  Abstract: The stellar initial mass function (IMF) and the fraction of binary systems are fundamental ingredients that govern the formation and evolution of galaxies. Whether the IMF is universal or varies with environment remains one of the central open questions in astrophysics. Dwarf galaxies such as the Small Magellanic Cloud (SMC), with their low metallicity and diffuse star-forming regions, offer critical laboratories to address this issue. In this work, we exploit ultra-deep photometry from the James Webb Space Telescope to investigate the stellar populations in the field of the SMC. Using the $m_{\rm F322W2}$ versus $m_{\rm F115W}-m_{\rm F322W2}$ color-magnitude diagram (CMD), we derive the luminosity function and measure the fraction of unresolved binary systems. We find a binary fraction of $f_{\rm bin}^{q>0.6}=0.14\pm0.01$, consistent with results from synthetic CMDs incorporating the metallicity distribution of the SMC. Additionally, the measured binary fraction in the SMC field is consistent with those observed in Galactic open clusters and Milky Way field stars of similar ages and masses, suggesting similar binary formation and evolutionary processes across these low-density environments. By combining the luminosity function with the best-fit isochrone, we derive the the mass function (MF) down to $0.22\,M_{\odot}$, the lowest mass limit reached for the SMC to date. The resulting MF follows a power-law with a slope of $\alpha=-1.99\pm0.08$. This value is shallower than the canonical Salpeter slope of $\alpha=-2.35$, providing new evidence for IMF variations in low-metallicity and low-density environments.</div>
+                
+            <div class="arxiv-links mt-2">
+                <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/" target="_blank">arXiv</a>
+                <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/" target="_blank">PDF</a>
+                <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:" target="_blank">ADS</a>
             </div>
-            <div class="arxiv-abstract-text">We consider the motion of a particle in the geometry of a Schwarzschild-like black hole embedded in a dark matter (DM) halo with Dehnen type density profile and calculate the orbital periods along with the evolution of the semi-latus rectum and eccentricity for extreme mass ratio inspirals (EMRIs). Such a system emits gravitational waves (GWs), and the particle's orbit evolves under radiation reaction. We also consider the effects of dynamical friction and accretion of DM on the orbital parameters. We find that the eccentricity and semi-latus rectum decrease faster with respect to the case in which EMRI is in empty spacetime.</div>
-            <div class="mt-3">
-        <div class="arxiv-links mt-2">
-            <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2509.08569" target="_blank">arXiv</a>
-            <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2509.08569" target="_blank">PDF</a>
-            <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2509.08569" target="_blank">ADS</a>
+        
+                
+            <div class="arxiv-scores">
+                <span class="badge bg-info text-dark">Author: 0</span>
+                <span class="badge bg-primary">Title: 7</span>
+                <span class="badge bg-secondary">Abstract: 0</span>
+            </div>
+        
+            </div>
         </div>
-    </div>
-            <div class="mt-2">
-        <div class="arxiv-scores">
-            <span class="badge bg-success">Total Score: 7.6</span>
-            <span class="badge bg-info text-dark">Author Score: 0.00</span>
-            <span class="badge bg-primary">Semantic Score: 0.76</span>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">2.9. The Effects of Near-AdS$_2$ Backreaction on Matter Fields</div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-2"><strong>Alejandra Castro, Jildou Hollander, Pedro J. Martinez, Evita Verheijden</strong></div>
+                <div>arXiv:2509.08046v1 Announce Type: cross  Abstract: We quantify how the two-point function of a real scalar field is affected by the distortion caused by deforming AdS$_2$ to a near-AdS$_2$ background. At tree-level, the backreaction of the geometry induces a finite-temperature correction to the correlator that arises from interactions that the background generates. For a massive field, we show that this correction is not captured by JT gravity coupled to matter: it requires a backreaction of the metric field. For a massless field, the correction is controlled solely by the dilaton and hence is model-independent. We compare our findings with correlation functions on BTZ and find perfect agreement. We use our results to quantify the corrections for a class of correlators relevant to five- and four-dimensional black holes. We discuss how these corrections would enter in a holographic description of near-AdS$_2$; we also comment on how these corrections provide a universal prediction for quasinormal modes in higher dimensions.</div>
+                
+            <div class="arxiv-links mt-2">
+                <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/" target="_blank">arXiv</a>
+                <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/" target="_blank">PDF</a>
+                <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:" target="_blank">ADS</a>
+            </div>
+        
+                
+            <div class="arxiv-scores">
+                <span class="badge bg-info text-dark">Author: 0</span>
+                <span class="badge bg-primary">Title: 0</span>
+                <span class="badge bg-secondary">Abstract: 5</span>
+            </div>
+        
+            </div>
         </div>
-    
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">2.8. Approximation in Lattice Field Theories</div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-2"><strong>Thomas Banks, Anish Suresh</strong></div>
+                <div>arXiv:2509.08501v1 Announce Type: cross  Abstract: We investigate an approximation to the Schwinger-Dyson (SD) equations of the collective Coulomb field of the large $N$ homogeneous electron fluid. The large $N$ approximation transforms the infinite SD hierarchy is into a set of closed, equations for 1 and 2-pt correlators. In this paper, the dynamics of a toy model - a small square Euclidean lattice with periodic boundary conditions - are considered. The Markov Chain Monte Carlo numerical method evaluated the 1 and 2-pt correlation functions on a $2 \times 2$ and $3 \times 3$ lattice. The derived equations are checked with the correlator values, and an agreement at $N \sim 10^3$ to order $10^{-3}$ was found. The agreement can be further strengthened by increasing runs in the Markov Chain Monte Carlo method.</div>
+                
+            <div class="arxiv-links mt-2">
+                <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/" target="_blank">arXiv</a>
+                <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/" target="_blank">PDF</a>
+                <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:" target="_blank">ADS</a>
+            </div>
+        
+                
+            <div class="arxiv-scores">
+                <span class="badge bg-info text-dark">Author: 0</span>
+                <span class="badge bg-primary">Title: 0</span>
+                <span class="badge bg-secondary">Abstract: 5</span>
+            </div>
+        
+            </div>
         </div>
-    </div>
-    </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">2.8. Influence of photometric galaxies redshift distribution in BAO estimation</div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-2"><strong>Paula S. Ferreira, Ribamar R. R. Reis</strong></div>
+                <div>arXiv:2501.04960v3 Announce Type: replace  Abstract: Photometric surveys are good solutions for large-scale structure studies. The Baryon Acoustic Oscillations (BAO) benefit from photometric redshift survey observations due to faster coverage and a higher number of observed objects. In the present study, we use the Dark Energy Survey Year 3 catalog of Luminous Red Galaxies (LRG) to incorporate the realistic galaxies' redshift Probability Distribution Function (PDF) into the correlation function cosmological model. We used four different photo-z estimators \texttt{ANNz2}, \texttt{BPZ}, \texttt{ENF}, and \texttt{DNF} to compare how they affect the BAO feature constraint, the catalogs called \texttt{Pz Cats}. Moreover, each algorithm included two sample selections based on distinct PDF shapes; one where the PDFs are nearly Gaussian and another opting for the least noisy PDFs with a pronounced peak. Our investigation identifies whether our samples detect BAO using the correlation function's polynomial parameterization. Later, we computed the correlation function $\xi_\perp(z_p)$ by getting the bin pairs transversal to each other using \texttt{CAMB}. The kernel window function is the $f(z|z_p)$ which is the selection of the PDF value when the photometric redshift is nearly the same as the spectroscopic redshift estimated by the matched spectroscopic sample. For compatible $z_{\rm eff}$, we concluded that the shape of the galaxy redshift PDF could shift the BAO feature position either by including the PDF in the model or not. We also learnt that, given the same spectroscopic sample, \texttt{ANNz2} estimator with its respective selection samples outperforms other estimators for most parameters examined.</div>
+                
+            <div class="arxiv-links mt-2">
+                <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/" target="_blank">arXiv</a>
+                <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/" target="_blank">PDF</a>
+                <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:" target="_blank">ADS</a>
+            </div>
+        
+                
+            <div class="arxiv-scores">
+                <span class="badge bg-info text-dark">Author: 0</span>
+                <span class="badge bg-primary">Title: 0</span>
+                <span class="badge bg-secondary">Abstract: 5</span>
+            </div>
+        
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">2.5. Dark Energy Survey Year 6 Results: improved mitigation of spatially varying observational systematics with masking</div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-2"><strong>M. Rodr\'iguez-Monroy, N. Weaverdyck, J. Elvin-Poole, I. Sevilla-Noarbe, A. Carnero Rosell, A. Drlica-Wagner, S. Avila, M. R. Becker, K. Bechtol, M. Crocce, M. Gatti, J. Mena-Fern\'andez, A. Porredon, D. Sanchez Cid, M. Yamamoto, M. Aguena, S. S. Allam, O. Alves, F. Andrade-Oliveira, D. Bacon, J. Blazek, S. Bocquet, D. Brooks, R. Camilleri, J. Carretero, R. Cawthon, C. Chang, L. N. da Costa, M. E. da Silva Pereira, S. Desai, H. T. Diehl, P. Doel, C. Doux, S. Everett, B. Flaugher, P. Fosalba, J. Frieman, J. Garc\'ia-Bellido, R. A. Gruendl, K. Herner, S. R. Hinton, D. L. Hollowood, K. Honscheid, D. Huterer, D. J. James, K. Kuehn, O. Lahav, S. Lee, J. L. Marshall, R. Miquel, J. Muir, J. Myles, R. L. C. Ogando, A. A. Plazas Malag\'on, J. Prat, E. Sanchez, T. Schutt, M. Smith, E. Suchyta, M. E. C. Swanson, C. To, M. A. Troxel, D. L. Tucker, V. Vikram</strong></div>
+                <div>arXiv:2509.07943v2 Announce Type: replace  Abstract: As photometric surveys reach unprecedented statistical precision, systematic uncertainties increasingly dominate large-scale structure probes relying on galaxy number density. Defining the final survey footprint is critical, as it excludes regions affected by artefacts or suboptimal observing conditions. For galaxy clustering, spatially varying observational systematics, such as seeing, are a leading source of bias. Template maps of contaminants are used to derive spatially dependent corrections, but extreme values may fall outside the applicability range of mitigation methods, compromising correction reliability. The complexity and accuracy of systematics modelling depend on footprint conservativeness, with aggressive masking enabling simpler, robust mitigation. We present a unified approach to define the DES Year 6 joint footprint, integrating observational systematics templates and artefact indicators that degrade mitigation performance. This removes extreme values from an initial seed footprint, leading to the final joint footprint. By evaluating the DES Year 6 lens sample MagLim++ plus plus on this footprint, we enhance the Iterative Systematics Decontamination (ISD) method, detecting non-linear systematic contamination and improving correction accuracy. While the mask's impact on clustering is less significant than systematics decontamination, it remains non-negligible, comparable to statistical uncertainties in certain w(theta) scales and redshift bins. Supporting coherent analyses of galaxy clustering and cosmic shear, the final footprint spans 4031.04 deg2, setting the basis for DES Year 6 1x2pt, 2x2pt, and 3x2pt analyses. This work highlights how targeted masking strategies optimise the balance between statistical power and systematic control in Stage-III and -IV surveys.</div>
+                
+            <div class="arxiv-links mt-2">
+                <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/" target="_blank">arXiv</a>
+                <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/" target="_blank">PDF</a>
+                <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:" target="_blank">ADS</a>
+            </div>
+        
+                
+            <div class="arxiv-scores">
+                <span class="badge bg-info text-dark">Author: 0</span>
+                <span class="badge bg-primary">Title: 1</span>
+                <span class="badge bg-secondary">Abstract: 3</span>
+            </div>
+        
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">2.3. J-PAS: Forecasting constraints on Neutrino Masses</div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-2"><strong>Gabriel Rodrigues, Antonio J. Cuesta, Jailson Alcaniz, Miguel Aparicio Resco, Antonio L. Maroto, Manuel Masip, Jamerson G. Rodrigues, Felipe B. M. dos Santos, Javier de Cruz P\'erez, Jorge Enrique Garc\'ia-Farieta, Clarissa Siqueira, Fuxing Qin, Yuting Wang, Gong-Bo Zhao, Carlos Hern\'andez-Monteagudo, Valerio Marra, Raul Abramo, Narciso Ben\'itez, Silvia Bonoli, Saulo Carneiro, Javier Cenarro, David Crist\'obal-Hornillos, Renato Dupke, Alessandro Ederoclite, Antonio Hern\'an-Caballero, Carlos L\'opez-Sanjuan, Antonio Mar\'in-Franch, Claudia Mendes de Oliveira, Mariano Moles, Laerte Sodr\'e Jr., Keith Taylor, Jes\'us Varela, H\'ector V\'azquez Rami\'o</strong></div>
+                <div>arXiv:2507.03740v2 Announce Type: replace  Abstract: The large-scale structure survey J-PAS is taking data since October 2023. In this work, we present a forecast based on the Fisher matrix method to establish its sensitivity to the sum of the neutrino masses. We adapt the Fisher Galaxy Survey Code (FARO) to account for the neutrino mass under various configurations applied to galaxy clustering measurements. This approach allows us to test the sensitivity of J-PAS to the neutrino mass across different tracers, with and without non-linear corrections, and under varying sky coverage. We perform our forecast for two cosmological models: $\Lambda CDM + \sum m_\nu$ and $w_0w_a CDM + \sum m_\nu$. We combine our J-PAS forecast with Cosmic Microwave Background (CMB) data from the Planck Collaboration and Type Ia supernova (SN) data from Pantheon Plus. Our analysis shows that, for a sky coverage of 8,500 square degrees, J-PAS galaxy clustering data alone will constrain the sum of the neutrino masses to an upper limit at 95\% C.L of $\sum m_\nu < 0.32$ eV for the $\Lambda CDM + \sum m_\nu$ model, and $\sum m_\nu < 0.36$ eV for the $w_0w_a CDM + \sum m_\nu$ model. When combined with Planck data, the upper limit improves significantly. For J-PAS+Planck at 95\% C.L, we find $\sum m_\nu < 0.061$ eV for the $\Lambda CDM + \sum m_\nu$ model, and for J-PAS+Planck+Pantheon Plus, we obtain $\sum m_\nu < 0.12$ eV for the $w_0w_a CDM + \sum m_\nu$ model. These results demonstrate that J-PAS clustering measurements can play a crucial role in addressing challenges in the neutrino sector, including potential tensions between cosmological and terrestrial measurements of the neutrino mass, as well as in determining the mass ordering.</div>
+                
+            <div class="arxiv-links mt-2">
+                <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/" target="_blank">arXiv</a>
+                <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/" target="_blank">PDF</a>
+                <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:" target="_blank">ADS</a>
+            </div>
+        
+                
+            <div class="arxiv-scores">
+                <span class="badge bg-info text-dark">Author: 0</span>
+                <span class="badge bg-primary">Title: 0</span>
+                <span class="badge bg-secondary">Abstract: 3</span>
+            </div>
+        
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">2.2. Matter power spectrum reconstruction with KiDS-Legacy: Improved internal $\Lambda$CDM consistency and preference for strong baryonic feedback</div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-2"><strong>Jeger C. Broxterman, Patrick Simon, Lucas Porth, Konrad Kuijken, Angus H. Wright, Marika Asgari, Maciej Bilicki, Catherine Heymans, Hendrik Hildebrandt, Henk Hoekstra, Benjamin Joachimi, Shun-Sheng Li, Matteo Maturi, Lauro Moscardini, Mario Radovich, Robert Reischke, Maximilian Von Wietersheim-Kramsta</strong></div>
+                <div>arXiv:2509.08365v1 Announce Type: new  Abstract: Direct measurements of the matter power spectrum, $P_\mathrm{m}(k,z)$, provide a powerful tool to investigate observed tensions between models of structure growth while also testing the internal consistency of cosmological probes. We analyse cosmic shear data from the final data release of the Kilo-Degree Survey (KiDS), presenting a deprojected $P_\mathrm{m}(k,z)$, measured in up to three redshift bins. Compared to analyses using previous KiDS releases, we find improved internal consistency in the $z\lesssim0.7$ regime. At large scales, $k\lesssim0.1\,h\,\rm Mpc^{-1}$, our power spectrum reconstruction aligns with $\Lambda$CDM predictions with a density fluctuation amplitude $\sigma_8=0.81$. Furthermore, at small scales, $k=3$-$20\,h\,\rm Mpc^{-1}$, the average matter power spectrum is suppressed by $30\%\pm10\%\,{\rm (stat.)}\pm4\%\,{\rm (sys.)}$ with $2.8\sigma$ significance relative to a dark-matter-only model, consistent with expectations of strong baryonic feedback.</div>
+                
+            <div class="arxiv-links mt-2">
+                <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/" target="_blank">arXiv</a>
+                <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/" target="_blank">PDF</a>
+                <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:" target="_blank">ADS</a>
+            </div>
+        
+                
+            <div class="arxiv-scores">
+                <span class="badge bg-info text-dark">Author: 0</span>
+                <span class="badge bg-primary">Title: 2</span>
+                <span class="badge bg-secondary">Abstract: 2</span>
+            </div>
+        
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">2.1. Fiducial-Cosmology-dependent systematics for the DESI 2024 Full-Shape Analysis</div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-2"><strong>R. Gsponer, S. Ramirez-Solano, F. Rodr\'iguez-Mart\'inez, M. Vargas-Maga\~na, S. Novell-Masot, N. Findlay, H. Gil-Mar\'in, P. Zarrouk, S. Nadathur, A. Rocher, S. Brieden, A. P\'erez-Fern\'andez, J. Aguilar, S. Ahlen, D. Bianchi, D. Brooks, F. J. Castander, T. Claybaugh, A. Cuceu, A. de la Macorra, A. de Mattia, Arjun Dey, P. Doel, A. Font-Ribera, J. E. Forero-Romero, E. Gazta\~naga, S. Gontcho A Gontcho, G. Gutierrez, J. Guy, C. Hahn, H. K. Herrera-Alcantar, K. Honscheid, C. Howlett, D. Huterer, M. Ishak, R. Joyce, R. Kehoe, D. Kirkby, T. Kisner, A. Kremin, O. Lahav, C. Lamman, M. Landriau, L. Le Guillou, M. E. Levi, C. Magneville, M. Manera, A. Meisner, R. Miquel, J. Moustakas, E. Mueller, N. Palanque-Delabrouille, W. J. Percival, F. Prada, I. P\'erez-R\`afols, G. Rossi, L. Samushia, E. Sanchez, D. Schlegel, M. Schubnell, H. Seo, J. Silber, D. Sprayberry, G. Tarl\'e, B. A. Weaver, C. Zhao, R. Zhou, H. Zou</strong></div>
+                <div>arXiv:2509.08057v1 Announce Type: new  Abstract: We assess the impact of the fiducial cosmology choice on cosmological inference from full-shape (FS) fits of the galaxy power spectrum in the DESI 2024 Data Release 1 (DR1). Using a suite of AbacusSummit DR1 mock catalogues based on the Planck 2018 best-fit cosmology, we quantify potential systematic shifts introduced by analysing the data under five secondary cosmologies - featuring variations in matter density, thawing dark energy, higher effective number of neutrino species, reduced clustering amplitude, and the DESI DR1 BAO best-fit $w_0w_a$CDM cosmology - relative to DESI's baseline Planck 2018 cosmology. We investigate two complementary FS analysis approaches: full-modelling (FM) and ShapeFit (SF), each with distinct sensitivities to the assumed fiducial model. Across all tracers, we find for FM that systematic shifts induced by fiducial cosmology mismatches remain well below the DESI DR1 statistical uncertainties, with maximum deviations of 0.22$\sigma_\mathrm{DR1}$ in $\Lambda$CDM scenarios and 0.12$\sigma_\mathrm{DR1+SN}$ when including SN Ia mock data in extended $w_0w_a$CDM fits. For SF, the shifts in the compressed parameters remain below $0.45\sigma_\mathrm{DR1}$ for all tracers and cosmologies.</div>
+                
+            <div class="arxiv-links mt-2">
+                <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/" target="_blank">arXiv</a>
+                <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/" target="_blank">PDF</a>
+                <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:" target="_blank">ADS</a>
+            </div>
+        
+                
+            <div class="arxiv-scores">
+                <span class="badge bg-info text-dark">Author: 0</span>
+                <span class="badge bg-primary">Title: 0</span>
+                <span class="badge bg-secondary">Abstract: 4</span>
+            </div>
+        
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">2.1. Cosmic Threads: Interlinking the Stellar Initial Mass Function from Star-Birth to Galaxies</div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-2"><strong>Tereza Jerabkova, Donatella Romano, Pavel Kroupa, Philippe Andr\'e, Martyna Chru\'sli\'nska, Fabio Fontanot, Andrew Hopkins, Vikrant Jadhav, Natalia Lah\'en, Yueh-Ning Lee, Alessio Mucciarelli, Stefania Salvadori, Long Wang, Zhiqiang Yan, Morten Andersen, Anna Durrant, Fabien Louvet, Mariya Lyubenova, Francesca Matteucci, Piyush Sharda, Glenn van de Ven, Alexandre Vazdekis</strong></div>
+                <div>arXiv:2509.06886v2 Announce Type: replace  Abstract: The stellar initial mass function (sIMF) describes the distribution of stellar masses formed in a single star formation event in a molecular cloud clump. It is fundamental to astrophysics and cosmology, shaping our understanding of unresolved stellar populations, galactic chemical enrichment and habitable zones, and black hole growth. This White Paper reviews studies on the core mass function, stellar multiplicity, and dynamical processes affecting sIMF determinations, as well as the link between star-forming clumps and the galaxy-wide IMF (gIMF). The evidence gleaned from observed systems for the dependency of the sIMF on the metallicity and density of the clump is portrayed. We examine evidence from gravitational lensing, stellar and gas kinematics, and spectral diagnostics to assess environmental dependencies of the gIMF. Theoretical perspectives provide further insights into the sIMF's variability. Beyond summarizing current knowledge, this work aims to establish a shared framework and define strategies for studying a variable IMF in the era of near-infrared integral-field spectroscopy, 30m-class telescopes and major space-based observatories.</div>
+                
+            <div class="arxiv-links mt-2">
+                <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/" target="_blank">arXiv</a>
+                <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/" target="_blank">PDF</a>
+                <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:" target="_blank">ADS</a>
+            </div>
+        
+                
+            <div class="arxiv-scores">
+                <span class="badge bg-info text-dark">Author: 0</span>
+                <span class="badge bg-primary">Title: 0</span>
+                <span class="badge bg-secondary">Abstract: 3</span>
+            </div>
+        
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">1.9. Roles of SN and AGN Feedback in Shaping the Baryonic Content in a Wide Range of Dark Matter Halo Mass</div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-2"><strong>Emanuele Contini, Changjo Seo, Jinsu Rhee, Seyoung Jeon, Sukyoung K. Yi</strong></div>
+                <div>arXiv:2507.10673v3 Announce Type: replace  Abstract: We build upon FEGA25 (Contini et al 2025), a previously introduced semi-analytic model for galaxy formation and evolution, focusing on its enhanced treatment of supernova and active galactic nucleus feedback mechanisms. In addition to the traditional AGN feedback modes, negative (suppressing cooling), and the new positive mode (triggering star formation), we introduce two implementations of a third mode: the ejection of hot gas beyond the virial radius, AGNeject1 and AGNeject2. This component addresses a longstanding issue in semi-analytic models and hydrodynamical simulations: the overestimation of hot gas fractions in low and intermediate mass halos. FEGA25 is calibrated via MCMC using a suite of cosmological N-body simulations YS50HR, YS200, and YS300, and a comprehensive set of observed stellar mass functions across a wide redshift range. We find that supernova feedback dominates gas ejection in halos with logM_{halo} < approximately 12, while AGN feedback becomes increasingly important at higher halo masses. The AGNeject2 model, which activates primarily at late times, redshift < 1, reproduces a characteristic cavity, a U shaped feature in the baryon fraction at redshift zero, similar to trends observed in simulations like SIMBA and IllustrisTNG. Conversely, AGNeject1 yields a smoother, redshift independent evolution. Both models preserve the stellar and cold gas components and successfully reproduce the stellar to halo mass relation up to redshift 3. Our results emphasize that a physically motivated AGN driven mechanism capable of selectively removing hot gas is essential to accurately model the baryon cycle, particularly in intermediate halo mass regimes.</div>
+                
+            <div class="arxiv-links mt-2">
+                <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/" target="_blank">arXiv</a>
+                <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/" target="_blank">PDF</a>
+                <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:" target="_blank">ADS</a>
+            </div>
+        
+                
+            <div class="arxiv-scores">
+                <span class="badge bg-info text-dark">Author: 0</span>
+                <span class="badge bg-primary">Title: 0</span>
+                <span class="badge bg-secondary">Abstract: 3</span>
+            </div>
+        
+            </div>
+        </div>
+        </div>
 
         <footer class="footer">
             &copy; 2025 arXiv Daily · Powered by <a href="https://arxiv.org/" target="_blank">arXiv</a>
