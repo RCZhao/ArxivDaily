@@ -70,7 +70,7 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add index.html arxiv_history/
+          git add index.html arxiv_history/ analysis_results/
           git commit -m "Auto update arxiv daily results [skip ci]" || echo "Nothing to commit"
           # Use github.ref_name to get the current branch name (e.g., 'main' or 'dev')
           # This makes the push command dynamic and avoids conflicts.
