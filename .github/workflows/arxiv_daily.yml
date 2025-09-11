@@ -23,10 +23,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Download NLTK data
-        run: |
-          python -m nltk.downloader punkt stopwords punkt_tab
-
       - name: Create Zotero config file
         run: |
           echo "[zotero]" > config.ini
@@ -44,6 +40,13 @@ jobs:
           key: ${{ runner.os }}-arxiv-cache-${{ hashFiles('**/config.ini') }}
           restore-keys: |
             ${{ runner.os }}-arxiv-cache-
+
+      - name: Cache NLTK data
+        id: cache-nltk
+        uses: actions/cache@v4
+        with:
+          path: nltk_data
+          key: ${{ runner.os }}-nltk-data-v1
 
       - name: Update score files
         run: |
@@ -63,18 +66,22 @@ jobs:
             echo "No HTML file generated today."
           fi
 
-      - name: Commit and push changes to main
+      - name: Commit and push changes
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add index.html arxiv_history/
           git commit -m "Auto update arxiv daily results [skip ci]" || echo "Nothing to commit"
-          git pull --rebase origin main
-          git push origin main
+          # Use github.ref_name to get the current branch name (e.g., 'main' or 'dev')
+          # This makes the push command dynamic and avoids conflicts.
+          CURRENT_BRANCH=${{ github.ref_name }}
+          git pull --rebase origin $CURRENT_BRANCH
+          git push origin $CURRENT_BRANCH
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Deploy to GitHub Pages
+        # if: github.ref == 'refs/heads/main' # Only deploy when on the main branch
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
