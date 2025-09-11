@@ -1,47 +1,26 @@
-""" An arXiv class that learns from arXiv links and produces scores
-for arXiv links"""
+"""Main script for generating the daily arXiv recommendation HTML page.
 
-import feedparser
-import requests
-from bs4 import BeautifulSoup
-from rake_nltk import Rake
-import re
-import pickle
-import os
+This script acts as the presentation layer. It uses the ArxivEngine to get a
+list of recommended papers and then formats them into a user-friendly HTML
+page that is automatically opened in a browser.
+"""
 import sys
 import time
+import re
+import os
 
-__author__ = 'Lijing Shao'
-__email__ = 'Friendshao@gmail.com'
-__licence__ = 'GPL'
+from arxiv_engine import ArxivEngine
+from config import BASE, MAX_PAPERS_TO_SHOW, MIN_SCORE_THRESHOLD, AUTHOR_COLLAPSE_THRESHOLD, ANALYSIS_OUTPUT_DIR
+
 
 #---------------------------------------------------------------------
-BASE = os.path.dirname(os.path.abspath(__file__))
-EXAMPLE_URL = 'https://arxiv.org/abs/1705.01278'
-
-# Overall score weights
-TITLE_SCORE = 60.0
-ABSTRACT_SCORE = 25.0
-AUTHOR_SCORE = 50.0
-
-RSS_URLS = ["http://export.arxiv.org/rss/astro-ph",
-            "http://export.arxiv.org/rss/gr-qc",
-            "http://export.arxiv.org/rss/hep-ph",
-            "http://export.arxiv.org/rss/physics.comp-ph",
-            "http://export.arxiv.org/rss/physics.data-an",
-            "http://export.arxiv.org/rss/physics.gen-ph",
-            "http://export.arxiv.org/rss/physics.hist-ph",
-            "http://export.arxiv.org/rss/physics.soc-ph",
-            "http://export.arxiv.org/rss/physics.pop-ph",
-            "http://export.arxiv.org/rss/math.HO",
-            "http://export.arxiv.org/rss/math.PR",
-            "http://export.arxiv.org/rss/math.ST",
-            "http://export.arxiv.org/rss/stat",
-            "http://export.arxiv.org/rss/CoRR"
-           ]
-
 MATHJAX = '''
 <style>
+/* Improved abstract readability */
+.arxiv-abstract-text {
+    font-size: 1.1em;
+    line-height: 1.7;
+}
 p.big {
     line-height: 1.6;
     font-size: large;
@@ -55,372 +34,124 @@ p.big {
     }
   });
 </script>
+<script>
+function toggleAuthors(element) {
+    const fullList = element.querySelector('.author-full');
+    const shortList = element.querySelector('.author-short');
+    const toggleText = element.querySelector('.author-toggle');
+    
+    fullList.style.display = fullList.style.display === 'none' ? 'inline' : 'none';
+    shortList.style.display = shortList.style.display === 'none' ? 'inline' : 'none';
+    toggleText.textContent = fullList.style.display === 'none' ? ' (show all)' : ' (show less)';
+}
+</script>
 <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
 </script>'''
 #---------------------------------------------------------------------
 
-class arXiv(object):
-    """ arXiv class
+def format_entry_to_html(item):
+    """Formats a single scored paper item into an HTML card.
 
-    methods:
-        __init__(self, mode='feed')
-        update_score_files(self)
-        unique_favorite_arxiv_links(self, verbose=True)
-        load_score_files(self)
-        get_content_from_url(self, url=EXAMPLE_URL)
-        get_content_from_entry(self, entry=dict())
-        score_from_url(self, url=EXAMPLE_URL, load_score=True,
-                       score_files=(None, None), verbose=False)
-        score_from_entry(self, entry=dict(),
-                         load_score=True, score_files=(None, None),
-                         verbose=False)
-        generate_weight_from_url(self, url=EXAMPLE_URL)
-        format_entry_to_html(self, entry)
-        clean_text(self, text)
+    Args:
+        item (dict): A dictionary containing the paper's score, score components,
+                     and the original feedparser entry.
+
+    Returns:
+        str: An HTML string representing a Bootstrap card for the paper.
     """
+    score = item['score']
+    score_list = item['score_list']
+    tldr = item.get('tldr', '') # Safely get TLDR
+    entry = item['entry']
 
-    def __init__(self, mode='feed'):
-        """ Two modes {'update', 'feed'}
-            - 'update': update score files
-            - 'feed': obtain daily feed
-        """
-        self.mode = mode
-        if mode == 'update':
-            self.favorite_links = self.update_score_files()
-        self.author, self.title_abstract = self.load_score_files()
+    # Use regex to extract title and arxiv id
+    match = re.match(r"^(.*)\s+\(arXiv:(\d+\.\d+)(?:v\d+)?\)", entry['title'])
+    if match:
+        title_text = match.group(1)
+        arxiv_id = match.group(2)
+    else:
+        title_text = entry['title']
+        arxiv_id = ""
 
-    def clean_text(self, text):
-        """ Given a text, clean it """
-        for s in '''$,'.()[]{}?!&*/\`~<>^%-+|"''':
-            text = text.replace(s, ' ')
-        text = [x.strip() for x in text.split(' ') if len(x.strip()) > 0]
-        return ' '.join(text)
+    # Check for update/cross-list status from summary
+    status = ""
+    summary_lower = entry['summary'].lower()
+    if 'announce type: replace' in summary_lower:
+        status = 'replace'
+    elif 'announce type: cross' in summary_lower:
+        status = 'cross-list'
 
-    def update_score_files(self):
-        """ Take new links, merge them into favorite links, and update the
-        score files
-        """
-        links = self.unique_favorite_arxiv_links()
-        new_links = list(set(open(os.path.join(BASE, 'update_arxiv_links.txt')).readlines()))
-        new_links = [x.replace('\n', '') for x in new_links if
-                     x.replace('\n', '') not in links]
-        # Erase the new arxiv link file
-        f = open(os.path.join(BASE, 'update_arxiv_links.txt'), 'w')
-        f.close()
-        # Update the favorite link file
-        with open(os.path.join(BASE, 'favorite_arxiv_links.txt'), 'a') as f:
-            for link in new_links:
-                f.write(link + '\n')
-        print('Score files updated with %d new links\n\n' % len(new_links),
-              new_links, '\n', flush=True)
-        # Update the score files
-        author, title_abstract = self.load_score_files()
-        for (idx, link) in enumerate(new_links):
-            print(idx, end='  ', flush=True)
-            a, t = self.generate_weight_from_url(link)
-            for x in a:
-                author[x] = author.get(x, 0.0) + a[x]
-            for x in t:
-                title_abstract[x] = title_abstract.get(x, 0.0) + t[x]
-        with open(BASE+'author.pickle', 'wb') as f:
-            pickle.dump(author, f)
-        with open(os.path.join(BASE, 'author.pickle'), 'wb') as f:
-            pickle.dump(title_abstract, f)
-        # Print Top20 authors and keywords
-        top20 = list(reversed(sorted(author, key=author.get)))[:20]
-        print('\n\t\t === Top20 favoriate authors === \n')
-        for x in top20:
-            print(x.rjust(40), '%.3f' % author[x])
-        top20 = list(reversed(sorted(
-                        title_abstract, key=title_abstract.get)))[:20]
-        print('\n\t\t === Top20 favoriate keywords === \n')
-        for x in top20:
-            print(x.rjust(40), '%.3f' % title_abstract[x])
-        return self.unique_favorite_arxiv_links()
+    if status:
+        title_text += f' <span class="badge bg-warning text-dark">{status}</span>'
 
-    def unique_favorite_arxiv_links(self, verbose=True):
-        """ Unique and sort favorite arXiv links.
-
-        Return the list of unique and sorted links
-        """
-        filename = os.path.join(BASE, 'favorite_arxiv_links.txt')
-        links = list(set(open(filename).readlines()))
-        links.sort()
-        with open(filename, 'w') as f:
-            for x in links:
-                f.write(x)
-        if verbose:
-            print('\nFavorite arXiv links are unique and sorted.')
-        return [x.replace('\n', '') for x in links]
-
-    # def load_score_files(self):
-    #     """ Load the score files """
-    #     author = pickle.load(open(BASE+'author.pickle', 'rb'))
-    #     title_abstract = pickle.load(open(BASE+'title_abstract.pickle', 'rb'))
-    #     return (author, title_abstract)
-    def load_score_files(self):
-        """ Load the score files """
-        author, title_abstract = dict(), dict()
-        author_pickle_filepath = os.path.join(BASE, 'author.pickle')
-        if os.path.exists(author_pickle_filepath):
-            if os.path.getsize(author_pickle_filepath) > 0:
-                with open(author_pickle_filepath, 'rb') as f:
-                    author = pickle.load(f)
-        title_abstract_pickle_filepath = os.path.join(BASE, 'title_abstract.pickle')
-        if os.path.exists(title_abstract_pickle_filepath):
-            if os.path.getsize(title_abstract_pickle_filepath) > 0:
-                with open(title_abstract_pickle_filepath, 'rb') as f:
-                    title_abstract = pickle.load(f)
-        return (author, title_abstract)
-
-    def get_content_from_url(self, url=EXAMPLE_URL):
-        """ Get author, title, abstract from a url """
-        content = {'author' : dict(), 'title' : '', 'abstract' : ''}
-        response = requests.get(url)
-        soup = BeautifulSoup(response.text, 'html.parser')
-        title = soup.findAll("h1", {"class" : "title mathjax"})[0].get_text()
-        author = soup.findAll("div", {"class" : "authors" })[0].get_text()
-        abstract = soup.findAll("blockquote",
-                                {"class" : "abstract mathjax"})[0].get_text()
-        title, author, abstract = str(title), str(author), str(abstract)
-        # author
-        author = re.sub(r'\<[^>]*\>', '', author)  # rm content in '<...>'
-        author = ''.join(author.split(':')[-1]).split('et al')[0]  # trim
-        author = re.sub('\(.*?\)', '', author)  # rm affiliation
-        author = author.replace('\n', ' ').split(',')
-        author = [x.strip() for x in author]
-        for x in author:
-            content['author'][x] = content['author'].get(x, 0) + 1
-        # title
-        title = ''.join(title.split(':')[1:]).replace('\n', ' ')
-        content['title'] = self.clean_text(title.lower())
-        # abstract
-        abstract = ''.join(abstract.split(':')[1:]).replace('\n', ' ')
-        content['abstract'] = self.clean_text(abstract.lower())
-        return content
-
-    def score_from_url(self, url=EXAMPLE_URL, load_score=True,
-                       score_files=(None, None), verbose=False):
-        """ Given a url, return a score
-
-        load_score controls if score_files are given or not
-        """
-        if load_score:
-            author, title_abstract = self.load_score_files()
-        else:
-            author, title_abstract = score_files
-        content = self.get_content_from_url(url)
-        N = sum(content['author'].values()) * 1.0  # probably to divide; unused
-        score1, score2, score3 = 0.0, 0.0, 0.0
-        if verbose:
-            print(content)
-            print('\n\t\t=== AUTHOR SCORE : %d ===' % AUTHOR_SCORE)
-        for x in content['author']:
-            if x in author:
-                if verbose:
-                    print(x.rjust(50) + ' : ', author[x])
-                score1 += content['author'][x] * author[x]
-        if verbose:
-            print('in total'.rjust(50) + ' : ', score1)
-            print('\n\t\t=== TITLE SCORE : %d ===' % TITLE_SCORE)
-        for x in title_abstract:
-            if x in content['title']:
-                if verbose:
-                    print(x.rjust(50) + ' : ', title_abstract[x])
-                score2 += title_abstract[x]
-        if verbose:
-            print('in total'.rjust(50) + ' : ', score2)
-            print('\n\t\t=== ABSTRACT SCORE : %d ===' % ABSTRACT_SCORE)
-        for x in title_abstract:
-            if x in content['abstract']:
-                if verbose and title_abstract[x] > 0.05 * score2:
-                    print(x.rjust(50) + ' : ', title_abstract[x])
-                score3 += title_abstract[x]
-        score = (score1 * AUTHOR_SCORE + score2 * TITLE_SCORE
-                 + score3 * ABSTRACT_SCORE)
-        if verbose:
-            print('...'.rjust(50) + ' : ' + '...')
-            print('in total'.rjust(50) + ' : ', score3)
-            print('\n\n' + 'TOTLE'.rjust(50) + ' : ', score)
-        return score
-
-    def score_from_entry(self, entry=dict(),
-                         load_score=True, score_files=(None, None),
-                         verbose=False):
-        """ Given a feedparser entry, return a score """
-        if load_score:
-            author, title_abstract = self.load_score_files()
-        else:
-            author, title_abstract = score_files
-        # Same as that in score_from_url
-        title = entry['title'].split('arXiv:')
-        status = title[-1].split(']')[-1][:-1].strip().lower()
-        content = self.get_content_from_entry(entry)
-        N = sum(content['author'].values()) * 1.0  # probably to divide; unused
-        score1, score2, score3 = 0.0, 0.0, 0.0
-        if verbose:
-            print(content)
-            print('\n\t\t=== AUTHOR SCORE : %d ===' % AUTHOR_SCORE)
-        for x in content['author']:
-            if x in author:
-                if verbose:
-                    print(x.rjust(50) + ' : ', author[x])
-                score1 += content['author'][x] * author[x]
-        if verbose:
-            print('in total'.rjust(50) + ' : ', score1)
-            print('\n\t\t=== TITLE SCORE : %d ===' % TITLE_SCORE)
-        for x in title_abstract:
-            if x in content['title']:
-                if verbose:
-                    print(x.rjust(50) + ' : ', title_abstract[x])
-                score2 += title_abstract[x]
-        if verbose:
-            print('in total'.rjust(50) + ' : ', score2)
-            print('\n\t\t=== ABSTRACT SCORE : %d ===' % ABSTRACT_SCORE)
-        for x in title_abstract:
-            if x in content['abstract']:
-                if verbose and title_abstract[x] > 0.05 * score2:
-                    print(x.rjust(50) + ' : ', title_abstract[x])
-                score3 += title_abstract[x]
-        score = (score1 * AUTHOR_SCORE + score2 * TITLE_SCORE
-                 + score3 * ABSTRACT_SCORE)
-        if len(status) > 0:  # update or cross-list
-            score *= 0.5
-        if verbose:
-            print('...'.rjust(50) + ' : ' + '...')
-            print('in total'.rjust(50) + ' : ', score3)
-            print('\n\n' + 'TOTLE'.rjust(50) + ' : ', score)
-        return score, [score1, score2, score3]
-
-
-    def get_content_from_entry(self, entry=dict()):
-        """ Get content from a feedparser entry """
-        content = {'author' : dict(), 'title' : '', 'abstract' : ''}
-        # title
-        title = re.sub('\(.*?\)', '', entry['title'])[:-2].replace('\n', ' ')
-        content['title'] = self.clean_text(title.lower())
-        # abstract
-        abstract = re.sub(r'\<[^>]*\>', '', entry['summary']).replace('\n', ' ')
-        content['abstract'] = self.clean_text(abstract.lower())
-        # author
-        author = re.sub(r'\<[^>]*\>', '', entry['author'])  # rm '<...>'
-        author = author.split('et al')[0]  # trim
-        author = re.sub('\(.*?\)', '', author)  # rm affiliation
-        author = author.replace('\n', ' ').split(',')
-        author = [x.strip() for x in author]
-        for x in author:
-            content['author'][x] = content['author'].get(x, 0) + 1
-        return content
-
-    def generate_weight_from_url(self, url=EXAMPLE_URL):
-        """ Generate score files from url
-
-        Title and abstract are combined; author, title, abstract each with a
-        total weight one.
-        """
-        author, title_abstract = dict(), dict()
-        content = self.get_content_from_url(url)
-        # author: every paper is normalised to 1
-        N = sum(content['author'].values()) * 1.0
-        for x in content['author']:
-            author[x] = author.get(x, 0.0) + content['author'][x] / N
-        # title
-        r = Rake()
-        r.extract_keywords_from_text(content['title'])
-        keywords = r.get_ranked_phrases_with_scores()
-        keywords = [x for x in keywords if len(''.join(x[1].split(' '))) >= 4
-                    and len(x[1]) <=60]
-        keywords = keywords[:int(len(keywords)/2)]
-        tot = sum([x[0] for x in keywords])
-        for (s, kw) in keywords:
-            title_abstract[kw] = title_abstract.get(kw, 0.0) + 1.0 * s / tot
-        # abstract
-        r = Rake()
-        r.extract_keywords_from_text(content['abstract'])
-        keywords = r.get_ranked_phrases_with_scores()
-        keywords = [x for x in keywords if len(''.join(x[1].split(' '))) >= 4
-                    and len(x[1]) <=60]
-        keywords = keywords[:int(len(keywords)/2)]
-        tot = sum([x[0] for x in keywords])
-        for (s, kw) in keywords:
-            title_abstract[kw] = title_abstract.get(kw, 0.0) + 1.0 * s / tot
-        return (author, title_abstract)
-
-    def format_entry_to_html(self, entry):
-        """ Format an entry from feedparser to html style """
-        score, score_list = self.score_from_entry(entry, load_score=False,
-                            score_files=(self.author, self.title_abstract))
-        # 用正则提取标题和arxiv id
-        match = re.match(r"^(.*)\s+\(arXiv:(\d+\.\d+)(?: \[.*\])?\)", entry['title'])
-        if match:
-            title_text = match.group(1)
-            arxiv_id = match.group(2)
-        else:
-            title_text = entry['title']
-            arxiv_id = ""
-        # 检查是否有 update/cross-list 等状态
-        status = ""
-        if "[" in entry['title']:
-            status = entry['title'].split("[")[-1].split("]")[0].lower()
-        if status and status not in arxiv_id:
-            title_text += f' <span class="badge bg-warning text-dark">{status}</span>'
-        links = f'''
-            <div class="arxiv-links mt-2">
-                <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/{arxiv_id}" target="_blank">arXiv</a>
-                <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/{arxiv_id}" target="_blank">PDF</a>
-                <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:{arxiv_id}" target="_blank">ADS</a>
+    # Handle long author lists
+    authors_html = f"<strong>{entry['author']}</strong>"
+    author_list = entry['author'].split(', ')
+    if len(author_list) > AUTHOR_COLLAPSE_THRESHOLD:
+        short_author_list = ', '.join(author_list[:AUTHOR_COLLAPSE_THRESHOLD]) + ', et al.'
+        authors_html = f'''
+            <div onclick="toggleAuthors(this)" style="cursor: pointer;">
+                <strong>
+                    <span class="author-short">{short_author_list}</span>
+                    <span class="author-full" style="display: none;">{entry['author']}</span>
+                </strong>
+                <a class="author-toggle text-primary" style="text-decoration: none;"> (show all)</a>
             </div>
         '''
-        scores = f'''
-            <div class="arxiv-scores">
-                <span class="badge bg-info text-dark">Author: {int(score_list[0] * AUTHOR_SCORE)}</span>
-                <span class="badge bg-primary">Title: {int(score_list[1] * TITLE_SCORE)}</span>
-                <span class="badge bg-secondary">Abstract: {int(score_list[2] * ABSTRACT_SCORE)}</span>
-            </div>
-        '''
-        abstract = re.sub(r'</?p>', '', entry['summary'].replace('\n', ' '))
-        html = f'''
-        <div class="arxiv-card card mb-4">
-            <div class="arxiv-title card-header">{score:.1f}. {title_text}</div>
-            <div class="arxiv-abstract card-body">
-                <div class="arxiv-meta mb-2"><strong>{entry['author']}</strong></div>
-                <div>{abstract}</div>
-                {links}
-                {scores}
-            </div>
+
+
+    links = f'''
+        <div class="arxiv-links mt-2">
+            <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/{arxiv_id}" target="_blank">arXiv</a>
+            <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/{arxiv_id}" target="_blank">PDF</a>
+            <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:{arxiv_id}" target="_blank">ADS</a>
         </div>
-        '''
-        return (score, html)
+    '''
+    scores = f'''
+        <div class="arxiv-scores">
+            <span class="badge bg-info text-dark">Author Score: {score_list[0]:.2f}</span>
+            <span class="badge bg-primary">Semantic Score: {score_list[1]:.2f}</span>
+        </div>
+    '''
+    # Clean abstract for display: remove HTML tags and normalize whitespace
+    abstract = re.sub(r'<[^>]*>', '', entry['summary'])
+    abstract = re.sub(r'\s+', ' ', abstract).strip()
+    html = f'''
+    <div class="arxiv-card card mb-4">
+        <div class="arxiv-title card-header">{score:.1f}. {title_text}</div>
+        <div class="arxiv-abstract card-body">
+            <div class="arxiv-meta mb-3">{authors_html}</div>
+            <div class="tldr-section mb-3">
+                <p class="fst-italic text-muted"><strong>TLDR:</strong> {tldr}</p>
+            </div>
+            <div class="arxiv-abstract-text">{abstract}</div>
+            <div class="mt-3">{links}</div>
+            <div class="mt-2">{scores}
+        </div>
+    </div>
+    '''
+    return html
 
-    def run_daily_arXiv(self):
-        """ Run daily arXiv feed """
-        links, entries = [], []
-        # Prepare entries with scores
-        for rss_url in RSS_URLS:
-            print(' ... parse ', rss_url)
-            feed = feedparser.parse(rss_url)
-            for entry in feed["entries"]:
-                link = entry['link']
-                if link not in links:
-                    links.append(link)
-                    entries.append(self.format_entry_to_html(entry))
-        zz = sorted([x[0] for x in entries])
-        if len(zz) >= 5:
-            thres = (zz[-3]*zz[-4]*zz[-5])**(1.0/3) / 3.0 # only keep high scores
-        else:
-            thres = 0.0
-        papers = dict()
-        for (s, e) in entries:
-            if s > thres:
-                papers[s] = e
-        idx = list(reversed(sorted(papers.keys())))
 
-        print('\nIn total: %d entries\n' % len(entries))
-        # Write to html file
-        count = 0
-        browser_cmd = "open"
-        out_file_name = os.path.join(BASE, time.strftime("%Y%m%d") + ".html")
-        f = open(out_file_name, "w")
+def generate_page(recommended_papers, cluster_plot_path=None, word_cloud_path=None):
+    """Generates and writes the final HTML page.
+
+    This function creates the daily recommendation page, including an optional
+    section for the analysis of favorite papers if the plot paths are provided.
+
+    The page is saved with the current date (e.g., '20231027.html') and then
+    opened in the default system web browser.
+
+    Args:
+        recommended_papers (list[dict]): A list of recommended paper items,
+            as returned by ArxivEngine.get_recommendations().
+        cluster_plot_path (str, optional): Path to the cluster visualization image.
+        word_cloud_path (str, optional): Path to the word cloud image.
+    """
+    browser_cmd = "open"
+    out_file_name = os.path.join(BASE, time.strftime("%Y%m%d") + ".html")
+
+    with open(out_file_name, "w") as f:
         f.write('<html lang="en">\n')
         f.write('''<head>
             <meta charset="UTF-8">
@@ -457,12 +188,42 @@ class arXiv(object):
             </div>
         </nav>
         ''')
+
+        # Add analysis section if plots are available
+        if cluster_plot_path and word_cloud_path:
+            relative_cluster_path = os.path.relpath(cluster_plot_path, BASE)
+            relative_wordcloud_path = os.path.relpath(word_cloud_path, BASE)
+            f.write(f'''
+            <div class="container py-4">
+                <header class="mb-4"><h2 class="display-6 text-center">Analysis of Your Favorites</h2></header>
+                <div class="row align-items-center">
+                    <div class="col-lg-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header fw-bold">Interest Word Cloud</div>
+                            <div class="card-body text-center p-2">
+                                <img src="{relative_wordcloud_path}" class="img-fluid rounded" alt="Word Cloud of favorite paper topics">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header fw-bold">Interest Clusters</div>
+                            <div class="card-body text-center p-2">
+                                <img src="{relative_cluster_path}" class="img-fluid rounded" alt="2D Cluster plot of favorite papers">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            ''')
+
         f.write('<div class="container py-4">\n')
         f.write('<header class="mb-4"><h1 class="display-5 text-center text-primary">arXiv:'
                 + time.strftime("%Y-%m-%d") + '</h1></header>\n')
-        for s in idx:
-            f.write(papers[s])
-            count += 1
+
+        for item in recommended_papers:
+            f.write(format_entry_to_html(item))
+
         f.write('</div>\n')
         f.write('''
         <footer class="footer">
@@ -470,16 +231,38 @@ class arXiv(object):
         </footer>
         '''.format(year=time.strftime("%Y")))
         f.write('</body></html>\n')
-        f.close()
-        os.system(browser_cmd + " " + out_file_name)
-        print('''\nIn total %d articles for your preview; please enjoy and have
-              a good day!\n''' % count)
+
+    os.system(browser_cmd + " " + out_file_name)
+    print(f'''\nIn total {len(recommended_papers)} articles for your preview; please enjoy and have
+          a good day!\n''')
+
 
 if __name__ == '__main__':
+    # This block handles the main execution logic.
+    # It can be run with 'update' to show a help message, or with no arguments
+    # to generate the daily feed.
     if len(sys.argv) > 1:
-        print(sys.argv[0], sys.argv[1])
-        my_arxiv = arXiv(sys.argv[1])
+        if sys.argv[1] == 'update':
+            print("To update the model, please run: python arxiv_engine.py update")
+            sys.exit()
     else:
-        my_arxiv = arXiv()
-        my_arxiv.run_daily_arXiv()
+        # Initialize the engine
+        recommender = ArxivEngine(mode='feed')
 
+        # Check for existing analysis plots to include in the page
+        cluster_plot = os.path.join(ANALYSIS_OUTPUT_DIR, 'cluster_visualization.png')
+        word_cloud = os.path.join(ANALYSIS_OUTPUT_DIR, 'word_cloud.png')
+
+        if not os.path.exists(cluster_plot) or not os.path.exists(word_cloud):
+            print("\nAnalysis plots not found. Skipping analysis section in HTML.")
+            cluster_plot = None
+            word_cloud = None
+        else:
+            print("\nFound analysis plots. They will be included in the HTML page.")
+
+        # Get daily recommendations
+        print("\n--- Getting Daily Recommendations ---")
+        recommendations = recommender.get_recommendations(MAX_PAPERS_TO_SHOW, MIN_SCORE_THRESHOLD)
+        
+        # Generate the final HTML page including analysis results
+        generate_page(recommendations, cluster_plot_path=cluster_plot, word_cloud_path=word_cloud)
