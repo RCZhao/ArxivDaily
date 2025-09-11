@@ -22,7 +22,7 @@ from nltk.tokenize import sent_tokenize
 
 from config import (
     BASE, EMBEDDING_MODEL, CACHE_FILE, CONFIG_FILE, RSS_URLS,
-    AUTHOR_WEIGHT, SEMANTIC_WEIGHT
+    AUTHOR_WEIGHT, SEMANTIC_WEIGHT, NLTK_DATA_PATH
 )
 
 
@@ -99,12 +99,24 @@ class ArxivEngine(object):
             return None
 
     def _ensure_nltk_data(self):
-        """Checks for and downloads NLTK 'punkt' data if missing."""
+        """
+        Checks for and downloads NLTK 'punkt' data if missing.
+        Manages a local data directory to avoid system-wide installation issues.
+        """
+        # Ensure the local NLTK data directory exists
+        if not os.path.exists(NLTK_DATA_PATH):
+            os.makedirs(NLTK_DATA_PATH)
+        
+        # Add the local path to NLTK's data path
+        if NLTK_DATA_PATH not in nltk.data.path:
+            nltk.data.path.append(NLTK_DATA_PATH)
+
+        # Check for the 'punkt' tokenizer and download if necessary
         try:
-            nltk.data.find('tokenizers/punkt')
+            nltk.data.find('tokenizers/punkt', paths=[NLTK_DATA_PATH])
         except LookupError:
-            print("NLTK 'punkt' tokenizer not found. Downloading...")
-            nltk.download('punkt', quiet=True)
+            print(f"NLTK 'punkt' tokenizer not found. Downloading to '{NLTK_DATA_PATH}'...")
+            nltk.download('punkt', download_dir=NLTK_DATA_PATH, quiet=True)
             print("Download complete.")
 
     def clean_text(self, text):
@@ -378,7 +390,8 @@ class ArxivEngine(object):
             similarities = util.cos_sim(text_embedding, sentence_embeddings)
             return sentences[np.argmax(similarities)]
         except Exception as e:
-            print(f"  ... TLDR generation failed: {e}")
+            # Make the error message more visible during execution
+            print(f"\n[ERROR] TLDR generation failed for a paper: {e}")
             return text[:250] + "..." if len(text) > 250 else text
 
     def get_recommendations(self, max_papers, min_score):
@@ -425,12 +438,19 @@ class ArxivEngine(object):
 
         papers_to_show = []
         # Now, generate TLDRs only for the selected papers, with a progress bar
+        # Also printing the result to the terminal for debugging, as requested.
         if papers_to_process:
+            print("\n--- Generating TLDRs for top papers ---")
             for item in tqdm(papers_to_process, desc="Generating TLDRs"):
                 # Clean the summary text before generating TLDR
                 summary_text = re.sub(r'<[^>]*>', '', item['entry']['summary'])
                 summary_text = re.sub(r'\s+', ' ', summary_text).strip()
-                item['tldr'] = self._generate_tldr(summary_text)
+                tldr = self._generate_tldr(summary_text)
+                item['tldr'] = tldr
+
+                # Print the generated TLDR for debugging. Using repr() to show any special characters.
+                print(f"\n  - TLDR for '{item['entry']['title'][:50]}...': {repr(tldr)}")
+
                 papers_to_show.append(item)
 
         print(f'\nIn total: {len(scored_entries)} entries, recommending top {len(papers_to_show)}\n')

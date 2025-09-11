@@ -8,6 +8,7 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 EMBEDDING_MODEL = 'allenai-specter'
 CACHE_FILE = os.path.join(BASE, 'arxiv_cache.pickle')
 CONFIG_FILE = os.path.join(BASE, 'config.ini')
+NLTK_DATA_PATH = os.path.join(BASE, 'nltk_data')
 
 # --- Analysis Configuration ---
 ANALYSIS_OUTPUT_DIR = os.path.join(BASE, 'analysis_results')

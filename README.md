@@ -28,13 +28,11 @@
 
 ### 1. Setup
 
+1.  **Clone the Repository**
 ```bash
 # Clone the repository
 git clone https://github.com/chuam/arxiv_daily.git
 cd arxiv_daily
-
-# Install dependencies
-pip install -r requirements.txt
 ```
 
 ### 2. Install Dependencies
@@ -117,6 +115,7 @@ https://your-username.github.io/your-repo-name/
 - `config.ini.template`: Template for Zotero API configuration.
 - `requirements.txt`: Dependency list
 - `arxiv_history/`: Archive of historical HTML pages
+- `analysis_results/`: Directory for storing generated analysis plots (word cloud, cluster map).
 - `.github/workflows/arxiv_daily.yml`: Automation workflow configuration
 
 ---
