@@ -92,8 +92,17 @@ class ZoteroClient:
             abstract = data.get('abstractNote', '')
             authors_list = [f"{c.get('firstName', '')} {c.get('lastName', '')}".strip() for c in data.get('creators', []) if c.get('creatorType') == 'author']
             
+            date_added = data.get('dateAdded') # Get the dateAdded field
+            
             if title and authors_list:
-                papers.append({'key': item['key'], 'version': data['version'], 'title': title, 'abstract': abstract, 'authors': authors_list})
+                papers.append({
+                    'key': item['key'], 
+                    'version': data['version'], 
+                    'title': title, 
+                    'abstract': abstract, 
+                    'authors': authors_list,
+                    'dateAdded': date_added # Add it to the paper dict
+                })
         
         self.favorite_papers = papers
         return self.favorite_papers

@@ -6,7 +6,7 @@ import configparser
 
 # --- Base Paths and Files ---
 BASE = os.path.dirname(os.path.abspath(__file__))
-EMBEDDING_MODEL = 'allenai-specter'
+EMBEDDING_MODEL = 'allenai/specter2_base'
 CACHE_FILE = os.path.join(BASE, 'arxiv_cache.pickle')
 CONFIG_FILE = os.path.join(BASE, 'config.ini')
 NLTK_DATA_PATH = os.path.join(BASE, 'nltk_data')
@@ -52,6 +52,12 @@ default_config = {
         'tldr_generator': 'sumy',
         'cluster_naming_method': 'tfidf',
         'word_cloud_method': 'tfidf'
+    },
+    'author_scoring': {
+        'use_recency_weighting': 'true',
+        'recency_half_life_days': '365',
+        'use_positional_weighting': 'true',
+        'first_author_boost': '1.5'
     }
 }
 config.read_dict(default_config)
@@ -78,3 +84,9 @@ LLM_MODEL = config.get('llm', 'model')
 TLDR_GENERATOR = config.get('features', 'tldr_generator')
 CLUSTER_NAMING_METHOD = config.get('features', 'cluster_naming_method')
 WORD_CLOUD_METHOD = config.get('features', 'word_cloud_method')
+
+# --- Author Scoring Configuration ---
+USE_RECENCY_WEIGHTING = config.getboolean('author_scoring', 'use_recency_weighting')
+RECENCY_HALF_LIFE_DAYS = config.getint('author_scoring', 'recency_half_life_days')
+USE_POSITIONAL_WEIGHTING = config.getboolean('author_scoring', 'use_positional_weighting')
+FIRST_AUTHOR_BOOST = config.getfloat('author_scoring', 'first_author_boost')

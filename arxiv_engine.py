@@ -6,13 +6,17 @@ papers from arXiv RSS feeds, and scoring them based on a combination of
 author preference and semantic similarity of the content.
 """
 import sys
+import time
 import pickle
 import os
+from datetime import datetime, timedelta, timezone
 import re
+import argparse
 import feedparser
 import arxiv
 
 import torch
+from pyzotero import zotero
 import numpy as np
 from sentence_transformers import SentenceTransformer, util
 from tqdm import tqdm
@@ -28,7 +32,8 @@ from sumy.utils import get_stop_words
 from config import (
     EMBEDDING_MODEL, CACHE_FILE, AUTHOR_WEIGHT, SEMANTIC_WEIGHT,
     NLTK_DATA_PATH, ARXIV_CATEGORIES, MAX_ARXIV_RESULTS, TLDR_GENERATOR,
-    LLM_MODEL
+    LLM_MODEL, USE_RECENCY_WEIGHTING, RECENCY_HALF_LIFE_DAYS,
+    USE_POSITIONAL_WEIGHTING, FIRST_AUTHOR_BOOST
 )
 from zotero_client import ZoteroClient
 from llm_utils import query_llm
@@ -76,6 +81,7 @@ class ArxivPaper:
         self.score_list = [0.0, 0.0]
         self.embedding = None
         self.cluster_id = None
+        self.cluster_name = ""
 
     def _extract_arxiv_id(self):
         match = re.search(r'(\d+\.\d+)', self.entry_id)
@@ -203,16 +209,24 @@ class ArxivEngine(object):
         if self.mode == 'update':
             self.update_interest_model()
         
-        self.author_scores, self.interest_vectors, self.interest_similarity_means, self.interest_similarity_stds = self.load_score_files()
+        self.author_scores, self.interest_vectors, self.interest_similarity_means, self.interest_similarity_stds, self.cluster_names = self.load_score_files()
 
-        # Ensure interest_vector is a tensor on the same device as the model
-        # to prevent device mismatch errors during similarity calculation.
+        # Convert loaded interest models to tensors on the correct device.
+        # This now handles both the old list-based format and the new hierarchical dict format.
         if self.interest_vectors is not None:
-            self.interest_vectors = torch.from_numpy(np.array(self.interest_vectors)).to(self.model.device)
-        if self.interest_similarity_means is not None:
-            self.interest_similarity_means = torch.from_numpy(np.array(self.interest_similarity_means)).to(self.model.device)
-        if self.interest_similarity_stds is not None:
-            self.interest_similarity_stds = torch.from_numpy(np.array(self.interest_similarity_stds)).to(self.model.device)
+            if isinstance(self.interest_vectors, dict):
+                # New hierarchical format: dict of { (p_id, s_id): data }
+                self.interest_vectors = {k: torch.from_numpy(v).to(self.model.device) for k, v in self.interest_vectors.items()}
+                if self.interest_similarity_means:
+                    self.interest_similarity_means = {k: torch.tensor(v, device=self.model.device, dtype=torch.float32) for k, v in self.interest_similarity_means.items()}
+                if self.interest_similarity_stds:
+                    self.interest_similarity_stds = {k: torch.tensor(v, device=self.model.device, dtype=torch.float32) for k, v in self.interest_similarity_stds.items()}
+            else: # Assumes old list format
+                self.interest_vectors = torch.from_numpy(np.array(self.interest_vectors)).to(self.model.device)
+                if self.interest_similarity_means is not None:
+                    self.interest_similarity_means = torch.from_numpy(np.array(self.interest_similarity_means)).to(self.model.device)
+                if self.interest_similarity_stds is not None:
+                    self.interest_similarity_stds = torch.from_numpy(np.array(self.interest_similarity_stds)).to(self.model.device)
 
     def update_interest_model(self):
         """Updates the interest model based on a Zotero library.
@@ -273,10 +287,11 @@ class ArxivEngine(object):
         paper_data_for_embedding = []
         for paper in all_current_papers:
             key = paper['key']
-            if key not in cached_papers_map or paper['version'] > cached_papers_map[key]['version']:
+            # Re-embed if engine script changed, or if paper is new/updated in Zotero.
+            if not engine_unchanged or key not in cached_papers_map or paper['version'] > cached_papers_map[key]['version']:
                 title_cleaned = ArxivPaper._clean_text(paper['title'], for_embedding=True)
                 abstract_cleaned = ArxivPaper._clean_text(paper['abstract'], for_embedding=True)
-                texts_to_embed.append(title_cleaned + ' ' + abstract_cleaned)
+                texts_to_embed.append(title_cleaned + self.model.tokenizer.sep_token + abstract_cleaned)
                 paper_data_for_embedding.append(paper)
 
         # --- Step 3: Generate embeddings only for the delta ---
@@ -305,60 +320,133 @@ class ArxivEngine(object):
         favorite_embeddings = np.array(embeddings_list)
 
         author_scores = {}
-        print(f"Processing {len(papers)} papers from Zotero library...")
-        for paper in papers:
-            # Update author scores
+        print(f"Processing {len(papers)} papers from Zotero library for author scores...")
+        
+        # --- New Author Scoring Logic ---
+        now = datetime.now(timezone.utc)
+        decay_rate = np.log(2) / RECENCY_HALF_LIFE_DAYS if RECENCY_HALF_LIFE_DAYS > 0 else 0
+
+        for paper in tqdm(papers, desc="Calculating Author Scores"):
+            # --- Recency Weighting ---
+            recency_weight = 1.0
+            if USE_RECENCY_WEIGHTING and decay_rate > 0:
+                date_added_str = paper.get('dateAdded')
+                if date_added_str:
+                    try:
+                        # Zotero format is like '2024-01-15T10:00:00Z'
+                        date_added = datetime.fromisoformat(date_added_str.replace('Z', '+00:00'))
+                        days_since_added = (now - date_added).days
+                        recency_weight = np.exp(-decay_rate * max(0, days_since_added))
+                    except (ValueError, TypeError):
+                        pass # Ignore if date is malformed
+
+            # --- Positional and Recency Weighting ---
             num_authors = len(paper['authors'])
             if num_authors > 0:
-                for author_name in paper['authors']:
-                    author_scores[author_name] = author_scores.get(author_name, 0.0) + 1.0 / num_authors
+                for i, author_name in enumerate(paper['authors']):
+                    positional_weight = 1.0
+                    if USE_POSITIONAL_WEIGHTING and i == 0:
+                        positional_weight = FIRST_AUTHOR_BOOST
+                    
+                    score_contribution = (positional_weight * recency_weight) / num_authors
+                    author_scores[author_name] = author_scores.get(author_name, 0.0) + score_contribution
 
         # Run analysis before saving the model to get UMAP data
         print("\n--- Running Analysis of Favorite Papers ---")
         from analysis import run_analysis as run_favorites_analysis
         # Call with the new signature, passing data directly
-        plot_path, wordcloud_path, reducer, reduced_embeddings, labels = run_favorites_analysis(papers, favorite_embeddings, n_clusters=None)
+        plot_path, wordcloud_path, reducer, reduced_embeddings, labels, cluster_names = run_favorites_analysis(papers, favorite_embeddings, n_clusters=None)
 
-        # --- Step 5: Calculate interest vectors based on clusters ---
-        interest_vectors = []
+        # --- Step 5: Calculate hierarchical interest vectors and dispersion ---
+        interest_vectors = {}
+        interest_similarity_means = {}
+        interest_similarity_stds = {}
+
         if len(papers) > 0 and labels is not None:
-            n_clusters = len(np.unique(labels))
-            if n_clusters > 1:
-                print(f"\nCalculating interest vectors for {n_clusters} clusters...")
-                for i in range(n_clusters):
-                    cluster_indices = np.where(labels == i)[0]
-                    if len(cluster_indices) > 0:
-                        cluster_embeddings = favorite_embeddings[cluster_indices]
-                        cluster_centroid = np.mean(cluster_embeddings, axis=0)
-                        interest_vectors.append(cluster_centroid)
-                print(f"Generated {len(interest_vectors)} cluster interest vectors.")
-            elif len(favorite_embeddings) > 0: # single cluster or no clustering case
-                print("\nOnly one cluster found, using a single global interest vector.")
-                interest_vectors.append(np.mean(favorite_embeddings, axis=0))
+            # `labels` is now a list of tuples: (primary_label, sub_label)
+            hierarchical_labels_np = np.array(labels)
+            primary_labels = hierarchical_labels_np[:, 0]
+            unique_primary_labels = np.unique(primary_labels)
 
-        # --- Step 5b: Calculate dispersion for each interest cluster ---
-        interest_similarity_means = []
-        interest_similarity_stds = []
-        if interest_vectors:
-            print(f"Calculating dispersion for {len(interest_vectors)} clusters...")
-            for i, centroid_embedding in enumerate(interest_vectors):
-                cluster_indices = np.where(labels == i)[0]
-                if len(cluster_indices) > 1:
-                    cluster_embeddings = favorite_embeddings[cluster_indices]
-                    # Convert numpy arrays to tensors for util.cos_sim
-                    centroid_tensor = torch.from_numpy(centroid_embedding).unsqueeze(0)
-                    cluster_tensor = torch.from_numpy(cluster_embeddings)
-                    
+            print(f"\nCalculating hierarchical interest vectors for {len(unique_primary_labels)} primary clusters...")
+
+            for p_id in unique_primary_labels:
+                # --- Process Primary Cluster ---
+                primary_indices = np.where(primary_labels == p_id)[0]
+                
+                if len(primary_indices) == 0:
+                    continue
+
+                primary_embeddings = favorite_embeddings[primary_indices]
+                primary_centroid = np.mean(primary_embeddings, axis=0)
+                
+                # Store primary cluster centroid (key: (primary_id, -1))
+                primary_key = (p_id, -1)
+                interest_vectors[primary_key] = primary_centroid
+
+                # Calculate and store dispersion for primary cluster
+                if len(primary_indices) > 1:
+                    centroid_tensor = torch.from_numpy(primary_centroid).unsqueeze(0)
+                    cluster_tensor = torch.from_numpy(primary_embeddings)
                     similarities = util.cos_sim(cluster_tensor, centroid_tensor).numpy().flatten()
                     
-                    mean_sim = np.mean(similarities)
-                    std_sim = np.std(similarities)
-                    interest_similarity_means.append(mean_sim)
-                    # Use a floor value to prevent division by zero for very tight clusters
-                    interest_similarity_stds.append(max(std_sim, 1e-6))
-                else: # Single-paper cluster or case where labels might not align
-                    interest_similarity_means.append(1.0)
-                    interest_similarity_stds.append(1e-6) # Small std dev, low chance of being picked
+                    interest_similarity_means[primary_key] = np.mean(similarities)
+                    interest_similarity_stds[primary_key] = max(np.std(similarities), 1e-6)
+                else:
+                    interest_similarity_means[primary_key] = 1.0
+                    interest_similarity_stds[primary_key] = 1e-6
+
+                # --- Process Sub-clusters ---
+                sub_labels_in_primary = hierarchical_labels_np[primary_indices, 1]
+                unique_sub_labels = np.unique(sub_labels_in_primary)
+
+                # Filter out the -1 label which indicates no sub-cluster
+                sub_cluster_ids = [s_id for s_id in unique_sub_labels if s_id != -1]
+
+                if not sub_cluster_ids:
+                    continue # No sub-clusters for this primary cluster
+
+                print(f"  - Found {len(sub_cluster_ids)} sub-clusters in primary cluster {p_id}.")
+                for s_id in sub_cluster_ids:
+                    sub_cluster_mask = (sub_labels_in_primary == s_id)
+                    original_indices_for_sub = primary_indices[sub_cluster_mask]
+
+                    if len(original_indices_for_sub) == 0: continue
+                    
+                    sub_embeddings = favorite_embeddings[original_indices_for_sub]
+                    sub_centroid = np.mean(sub_embeddings, axis=0)
+
+                    # Store sub-cluster centroid (key: (primary_id, sub_id))
+                    sub_key = (p_id, s_id)
+                    interest_vectors[sub_key] = sub_centroid
+
+                    # Calculate and store dispersion for sub-cluster
+                    if len(original_indices_for_sub) > 1:
+                        centroid_tensor = torch.from_numpy(sub_centroid).unsqueeze(0)
+                        cluster_tensor = torch.from_numpy(sub_embeddings)
+                        similarities = util.cos_sim(cluster_tensor, centroid_tensor).numpy().flatten()
+                        
+                        interest_similarity_means[sub_key] = np.mean(similarities)
+                        interest_similarity_stds[sub_key] = max(np.std(similarities), 1e-6)
+                    else:
+                        interest_similarity_means[sub_key] = 1.0
+                        interest_similarity_stds[sub_key] = 1e-6
+
+            print(f"Generated {len(interest_vectors)} hierarchical interest vectors in total.")
+
+        elif len(favorite_embeddings) > 0: # Fallback for no clustering
+            print("\nNo clusters found, using a single global interest vector.")
+            global_centroid = np.mean(favorite_embeddings, axis=0)
+            interest_vectors[(0, -1)] = global_centroid
+            if len(favorite_embeddings) > 1:
+                centroid_tensor = torch.from_numpy(global_centroid).unsqueeze(0)
+                cluster_tensor = torch.from_numpy(favorite_embeddings)
+                similarities = util.cos_sim(cluster_tensor, centroid_tensor).numpy().flatten()
+                interest_similarity_means[(0, -1)] = np.mean(similarities)
+                interest_similarity_stds[(0, -1)] = max(np.std(similarities), 1e-6)
+            else:
+                interest_similarity_means[(0, -1)] = 1.0
+                interest_similarity_stds[(0, -1)] = 1e-6
 
         # --- Step 6: Save all results to a single cache file ---
         print(f"Saving updated models to '{os.path.basename(CACHE_FILE)}'...")
@@ -373,7 +461,8 @@ class ArxivEngine(object):
             'embeddings': favorite_embeddings,
             'umap_reducer': reducer,
             'umap_embeddings_2d': reduced_embeddings,
-            'cluster_labels': labels
+            'cluster_labels': labels,
+            'cluster_names': cluster_names
         }
         with open(CACHE_FILE, 'wb') as f:
             pickle.dump(cache_data, f)
@@ -391,9 +480,9 @@ class ArxivEngine(object):
         """Loads the author scores and the interest vector from pickle files.
 
         Returns:
-            tuple: A tuple containing author_scores (dict), interest_vectors (list),
-            interest_similarity_means (list), and interest_similarity_stds (list).
-            Values can be None if the cache file doesn't exist.
+            tuple: A tuple containing author_scores (dict), interest_vectors (dict/list),
+            interest_similarity_means (dict/list), interest_similarity_stds (dict/list),
+            and cluster_names (dict). Values can be None/empty if the cache file doesn't exist.
         """
         if os.path.exists(CACHE_FILE) and os.path.getsize(CACHE_FILE) > 0:
             with open(CACHE_FILE, 'rb') as f:
@@ -410,72 +499,116 @@ class ArxivEngine(object):
                             interest_vectors = [interest_vector]
                     interest_similarity_means = cache_data.get('interest_similarity_means', None)
                     interest_similarity_stds = cache_data.get('interest_similarity_stds', None)
-                    return author_scores, interest_vectors, interest_similarity_means, interest_similarity_stds
+                    cluster_names = cache_data.get('cluster_names', {})
+                    return author_scores, interest_vectors, interest_similarity_means, interest_similarity_stds, cluster_names
                 except (EOFError, pickle.UnpicklingError) as e:
                     print(f"Warning: Could not load cache file '{os.path.basename(CACHE_FILE)}'. It might be corrupted. Error: {e}")
         
-        return {}, None, None, None
+        return {}, None, None, None, {}
 
-    def score_paper(self, paper, algorithm='z_score'):
-        """Calculates a recommendation score for a given feedparser entry.
+    def _score_papers_batch(self, papers_to_score, algorithm='z_score'):
+        """
+        Calculates recommendation scores for a batch of papers efficiently.
 
-        The score is a weighted combination of an author score (based on the
-        paper's authors appearing in the learned author model) and a semantic
-        score (based on the cosine similarity between the paper's content
-        embedding and the user's interest vector).
+        This method leverages batch processing for embedding generation and similarity
+        calculation, which is significantly faster than processing papers one by one,
+        especially on a GPU.
 
         Args:
-            paper (ArxivPaper): The paper object to score.
-            algorithm (str, optional): The scoring algorithm to use, 'z_score' or
-                'max_similarity'. Defaults to 'z_score'.
+            papers_to_score (list[ArxivPaper]): A list of paper objects to score.
+            algorithm (str): The scoring algorithm ('z_score' or 'max_similarity').
 
         Returns:
-            tuple[float, list[float]]: A tuple containing the total score and a list
-            of the component scores [author_score, semantic_score].
+            list[ArxivPaper]: The input list, with score-related attributes populated.
         """
-        author_scores, interest_vectors, means, stds = self.author_scores, self.interest_vectors, self.interest_similarity_means, self.interest_similarity_stds
+        if not papers_to_score:
+            return []
 
-        if interest_vectors is None or len(interest_vectors) == 0:
-            print("Interest vector(s) not found. Please run with 'update' mode first.")
-            return 0.0, [0.0, 0.0], None, None
-
-        # 1. Calculate Author Score
-        author_score = 0.0
-        for author_name in paper.authors:
-            author_score += author_scores.get(author_name, 0.0)
-
-        # 2. Calculate Semantic Score
-        text_to_embed = paper.title_for_embedding + ' ' + paper.summary_for_embedding
-        entry_embedding = self.model.encode(text_to_embed, convert_to_tensor=True, device=self.model.device)
-        # Calculate similarities against all cluster vectors. The result is a tensor of similarities.
-        similarities = util.cos_sim(interest_vectors, entry_embedding) # Shape: [num_clusters, 1]
-
-        # Choose algorithm for selecting the best cluster and its score
-        if algorithm == 'z_score' and means is not None and stds is not None:
-            if similarities.device != means.device:
-                means = means.to(similarities.device)
-            if similarities.device != stds.device:
-                stds = stds.to(similarities.device)
+        # --- Step 1: Unpack hierarchical model data and prepare for batch processing ---
+        # This handles both the new hierarchical dict format and the old list-based format.
+        if isinstance(self.interest_vectors, dict):
+            if not self.interest_vectors:
+                print("Interest vector dictionary is empty. Please run with 'update' mode first.")
+                return []
             
-            z_scores = (similarities.squeeze() - means) / stds
-            cluster_id = torch.argmax(z_scores).item()
-            # Use the raw similarity from the best cluster for the final score
-            semantic_score = similarities[cluster_id].item()
-        else:
-            # Default to max_similarity if z_score is not possible or not chosen
-            if algorithm == 'z_score':
-                print("Warning: Dispersion data not found in cache. Falling back to 'max_similarity' algorithm. Run 'arxiv_engine.py update' to generate it.")
-            semantic_score = torch.max(similarities).item()
-            cluster_id = torch.argmax(similarities).item()
+            # Unzip the dictionary into ordered lists/tensors
+            cluster_keys = list(self.interest_vectors.keys())
+            interest_vectors_tensor = torch.stack(list(self.interest_vectors.values()))
+            
+            means_tensor = None
+            stds_tensor = None
+            if self.interest_similarity_means and self.interest_similarity_stds:
+                # Create tensors from dict values, ordered by cluster_keys to ensure alignment
+                means_list = [self.interest_similarity_means[k] for k in cluster_keys]
+                stds_list = [self.interest_similarity_stds[k] for k in cluster_keys]
+                # self.interest_similarity_means contains 0-dim tensors, so stack them into a 1-D tensor
+                means_tensor = torch.stack(means_list)
+                stds_tensor = torch.stack(stds_list)
+        else: # Handle legacy list-based format for backward compatibility
+            cluster_keys = list(range(len(self.interest_vectors))) if self.interest_vectors is not None else []
+            interest_vectors_tensor = self.interest_vectors
+            means_tensor = self.interest_similarity_means
+            stds_tensor = self.interest_similarity_stds
 
-        # 3. Combine scores
-        total_score = (author_score * AUTHOR_WEIGHT) + (semantic_score * SEMANTIC_WEIGHT)
+        if interest_vectors_tensor is None or len(interest_vectors_tensor) == 0:
+            print("Interest vector(s) not found. Please run with 'update' mode first.")
+            return []
 
-        # Penalize replacements and cross-lists
-        if paper.status in ['replace', 'cross-list']:
-            total_score *= 0.5
+        # --- Step 2: Batch embed all papers ---
+        texts_to_embed = [p.title_for_embedding + self.model.tokenizer.sep_token + p.summary_for_embedding for p in papers_to_score]
+        all_embeddings = self.model.encode(
+            texts_to_embed,
+            convert_to_tensor=True,
+            show_progress_bar=True,
+            device=self.model.device
+        )
 
-        return total_score, [author_score, semantic_score], entry_embedding.cpu().numpy(), cluster_id
+        # --- Step 3: Batch calculate all semantic similarities ---
+        # Resulting shape: [num_papers, num_total_clusters]
+        all_similarities = util.cos_sim(all_embeddings, interest_vectors_tensor)
+
+        # --- Step 4: Calculate scores for each paper using batched results ---
+        for i, paper in enumerate(tqdm(papers_to_score, desc="Calculating Scores")):
+            # a. Calculate Author Score
+            raw_author_score = sum(self.author_scores.get(author, 0.0) for author in paper.authors)
+            author_score = np.tanh(raw_author_score)
+
+            # b. Determine Semantic Score from pre-calculated similarities
+            similarities_for_paper = all_similarities[i]
+
+            best_cluster_index = -1
+            semantic_score = 0.0
+
+            if algorithm == 'z_score' and means_tensor is not None and stds_tensor is not None:
+                # z_scores are calculated against all clusters (primary and sub) at once
+                z_scores = (similarities_for_paper - means_tensor) / stds_tensor
+                best_cluster_index = torch.argmax(z_scores).item()
+                semantic_score = similarities_for_paper[best_cluster_index].item()
+            else:
+                # Fallback to max_similarity if z_score is not chosen or data is missing
+                if algorithm == 'z_score':
+                    print("Warning: Dispersion data not found. Falling back to 'max_similarity'.")
+                best_cluster_index = torch.argmax(similarities_for_paper).item()
+                semantic_score = similarities_for_paper[best_cluster_index].item()
+            
+            # Get the actual cluster ID (e.g., (2, 1) or 0) using the index
+            cluster_id = cluster_keys[best_cluster_index]
+
+            # tqdm.write(f"DEBUG: Paper '{paper.title_text[:50]}...' -> Score: {semantic_score:.3f}, Assigned Cluster ID: {cluster_id}")
+
+            # c. Combine scores
+            total_score = (author_score * AUTHOR_WEIGHT) + (semantic_score * SEMANTIC_WEIGHT)
+            if paper.status in ['replace', 'cross-list']:
+                total_score *= 0.5
+
+            # d. Assign results to the paper object
+            paper.score = total_score
+            paper.score_list = [author_score, semantic_score]
+            paper.embedding = all_embeddings[i].cpu().numpy()
+            paper.cluster_id = cluster_id
+            paper.cluster_name = self.cluster_names.get(cluster_id, "N/A")
+
+        return papers_to_score
 
     def _generate_tldr_sumy(self, text):
         """Generates a TLDR using the sumy library (LSA)."""
@@ -501,10 +634,22 @@ class ArxivEngine(object):
             print(f"\n[ERROR] TLDR generation failed for a paper: {e}")
             return text[:250] + "..." if len(text) > 250 else text
 
+    def _generate_tldr_llm_single(self, paper):
+        """Generates a TLDR for a single paper using an LLM."""
+        prompt = f"Summarize the following academic abstract in a single, concise, and informative sentence. Do not start with 'This paper' or 'The authors'. Abstract: \"{paper.cleaned_summary}\""
+        try:
+            summary = query_llm(prompt, model_name=LLM_MODEL, temperature=0.2, max_tokens=100)
+            if summary:
+                return summary
+            return None # Indicate failure
+        except Exception as e:
+            print(f"\n[ERROR] LLM single-paper TLDR generation failed for {paper.arxiv_id}: {e}")
+            return None
+
     def _generate_tldrs_batch_llm(self, papers, batch_size=10):
         """
         Generates TLDRs for a list of papers in batches using an LLM.
-        This is much more efficient than one call per paper and avoids rate limits.
+        Includes a fallback to individual processing if a batch fails.
         """
         print(f"Generating TLDRs for {len(papers)} papers in batches of {batch_size} using LLM...")
 
@@ -527,15 +672,25 @@ class ArxivEngine(object):
             
             try:
                 summaries = query_llm(prompt, model_name=LLM_MODEL, temperature=0.2, max_tokens=2000, is_json=True)
-                if summaries and isinstance(summaries, dict):
-                    for paper in batch:
-                        paper.tldr = summaries.get(paper.arxiv_id, "TLDR generation failed for this paper.")
-                else:
+                if not (summaries and isinstance(summaries, dict)):
                     raise ValueError("LLM did not return a valid JSON dictionary.")
-            except Exception as e:
-                print(f"\n[ERROR] LLM batch TLDR generation failed for batch starting at index {i}: {e}")
+                
+                # Batch call was successful, assign TLDRs
                 for paper in batch:
-                    paper.tldr = "TLDR generation failed due to an error."
+                    paper.tldr = summaries.get(paper.arxiv_id, "TLDR generation failed for this paper.")
+
+            except Exception as e:
+                print(f"\n[WARNING] LLM batch TLDR generation failed for batch starting at index {i}: {e}. Falling back to individual processing for this batch.")
+                # Fallback to individual processing for this batch
+                for paper in batch:
+                    time.sleep(4) # To avoid hitting rate limits
+                    single_summary = self._generate_tldr_llm_single(paper)
+                    if single_summary:
+                        paper.tldr = single_summary
+                    else:
+                        # Second fallback to sumy
+                        print(f"  [FALLBACK] Using 'sumy' for paper {paper.arxiv_id}.")
+                        paper.tldr = self._generate_tldr_sumy(paper.cleaned_summary) + " (sumy fallback)"
 
     def get_recommendations(self, max_papers, min_score, algorithm='z_score'):
         """Fetches the latest daily papers using the arXiv RSS feed, scores them, and returns a sorted list.
@@ -569,16 +724,16 @@ class ArxivEngine(object):
             exception_info = feed.get('bozo_exception', 'The feed is malformed.')
             print(f"Error: Could not parse arXiv RSS feed. Error: {exception_info}")
             print("Aborting recommendation generation.")
-            return []
+            return [], []
         
         if 'Feed error for query' in feed.feed.title:
             print(f"Error: arXiv returned a feed error for the query '{query}'. Please check ARXIV_CATEGORIES in config.py.")
             print("Aborting recommendation generation.")
-            return []
+            return [], []
 
         # Filter for 'new' announcements only, to strictly follow the reference implementation.
         paper_ids = []
-        for entry in tqdm(feed.entries):
+        for entry in tqdm(feed.entries, desc="Parsing RSS feed"):
             # The 'arxiv_announce_type' is a custom tag in the arXiv RSS feed.
             announce_type = getattr(entry, 'arxiv_announce_type', None)
             if announce_type == 'new':
@@ -589,11 +744,11 @@ class ArxivEngine(object):
 
         if not paper_ids:
             print("No new papers found in the RSS feed for today's announcement. Exiting.")
-            return []
+            return [], []
 
         # --- Step 2: Fetch full paper details using the arxiv library in batches ---
         print(f"Found {len(paper_ids)} new papers. Fetching full details...")
-        client = arxiv.Client(page_size=100, delay_seconds=3, num_retries=5)
+        client = arxiv.Client(page_size=100, delay_seconds=10, num_retries=5)
         
         # The arxiv library can handle a large id_list and will paginate internally.
         search = arxiv.Search(id_list=paper_ids, sort_by=arxiv.SortCriterion.SubmittedDate)
@@ -602,18 +757,8 @@ class ArxivEngine(object):
         papers_to_score = [ArxivPaper(result) for result in tqdm(client.results(search), total=len(paper_ids), desc="Fetching details")]
 
         # --- Step 3: Score the fetched papers ---
-        print(f"Scoring {len(papers_to_score)} new papers...")
-        scored_papers = []
-        for paper in tqdm(papers_to_score, desc="Scoring Papers"):
-            score, score_list, embedding, cluster_id = self.score_paper(paper, algorithm=algorithm)
-            if embedding is None: # score_paper might fail
-                continue
-            paper.score = score
-            paper.score_list = score_list
-            paper.embedding = embedding
-            paper.cluster_id = cluster_id
-            scored_papers.append(paper)
-
+        scored_papers = self._score_papers_batch(papers_to_score, algorithm=algorithm)
+        
         # --- Step 4: Filter, sort, and generate TLDRs ---
         sorted_papers = sorted(scored_papers, key=lambda p: p.score, reverse=True)
 
@@ -638,13 +783,119 @@ class ArxivEngine(object):
         print(f'\nIn total: {len(scored_papers)} entries, recommending top {len(papers_to_show)}\n')
         return papers_to_show, sorted_papers
 
+    def get_historical_recommendations(self, start_date, end_date, max_papers, min_score, algorithm='z_score'):
+        """
+        Fetches papers from a specified date range, scores them, and returns a sorted list.
+
+        Args:
+            start_date (datetime): The start date of the period to fetch.
+            end_date (datetime): The end date of the period to fetch.
+            max_papers (int): The maximum number of papers to return.
+            min_score (float): The minimum score a paper must have to be included.
+            algorithm (str): The scoring algorithm to use ('z_score' or 'max_similarity').
+
+        Returns:
+            tuple[list[ArxivPaper], list[ArxivPaper]]: A tuple containing the list of recommended papers
+            and the list of all scored papers.
+        """
+        if self.interest_vectors is None or len(self.interest_vectors) == 0:
+            print("Interest vector(s) not found. Please run with 'update' mode first.")
+            return [], []
+        
+        print(f"Fetching papers from {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}...")
+        print("This may take a very long time.")
+
+        query_parts = [f"cat:{cat}" for cat in ARXIV_CATEGORIES]
+        categories_query = " OR ".join(query_parts)
+        
+        all_papers_to_score = []
+        
+        # --- Set up for progress bar over the entire date range ---
+        total_days = (end_date - start_date).days
+        if total_days < 0: total_days = 0
+        
+        days_per_chunk = 1  # Process in more efficient monthly chunks
+        current_start = start_date
+        
+        with tqdm(total=total_days + 1, unit="day", desc="Querying historical papers") as pbar:
+            while current_start <= end_date:
+                chunk_start_str = current_start.strftime('%Y-%m-%d')
+                # Define the end of the current chunk
+                current_end = current_start + timedelta(days=days_per_chunk - 1)
+                if current_end > end_date:
+                    current_end = end_date
+                chunk_end_str = current_end.strftime('%Y-%m-%d')
+
+                date_query = f"submittedDate:[{current_start.strftime('%Y%m%d')}0000 TO {current_end.strftime('%Y%m%d')}2359]"
+                full_query = f"({categories_query}) AND {date_query}"
+                
+                try:
+                    search = arxiv.Search(
+                        query=full_query,
+                        max_results=float('inf'),
+                        sort_by=arxiv.SortCriterion.SubmittedDate
+                    )
+                    client = arxiv.Client(page_size=200, delay_seconds=5, num_retries=5)
+                    results_iterator = client.results(search)
+                    
+                    # Inner tqdm shows progress for fetching details within the current chunk
+                    desc = f"Fetching {chunk_start_str} to {chunk_end_str}"
+                    chunk_papers = [ArxivPaper(result) for result in tqdm(results_iterator, desc=desc, leave=False)]
+                    
+                    all_papers_to_score.extend(chunk_papers)
+
+                except Exception as e:
+                    print(f"\nAn error occurred during query for period {chunk_start_str}: {e}")
+                
+                # --- Update progress bar and set the start for the next chunk ---
+                days_processed = (current_end - current_start).days + 1
+                pbar.update(days_processed)
+                current_start = current_end + timedelta(days=1)
+
+        print(f"\nTotal papers to score from backfill: {len(all_papers_to_score)}")
+
+        # --- Score the fetched papers ---
+        scored_papers = self._score_papers_batch(all_papers_to_score, algorithm=algorithm)
+        # --- Filter, sort, and generate TLDRs ---
+        sorted_papers = sorted(scored_papers, key=lambda p: p.score, reverse=True)
+
+        papers_to_process = []
+        for paper in sorted_papers:
+            if len(papers_to_process) >= max_papers:
+                break
+            if paper.score >= min_score:
+                papers_to_process.append(paper)
+
+        papers_to_show = []
+        if papers_to_process:
+            print(f"\n--- Generating TLDRs for top {len(papers_to_process)} recommended papers ---")
+            if TLDR_GENERATOR == 'llm':
+                self._generate_tldrs_batch_llm(papers_to_process)
+                papers_to_show = papers_to_process
+            else:
+                for paper in tqdm(papers_to_process, desc="Generating TLDRs"):
+                    paper.tldr = self._generate_tldr_sumy(paper.cleaned_summary)
+                    papers_to_show.append(paper)
+
+        print(f'\nIn total: {len(scored_papers)} entries, recommending top {len(papers_to_show)} papers\n')
+        return papers_to_show, scored_papers
+
 if __name__ == '__main__':
-    # This block allows the script to be run directly to update the interest model.
-    if len(sys.argv) > 1 and sys.argv[1] == 'update':
+    parser = argparse.ArgumentParser(
+        description="Core engine for arxiv_daily. Use 'update' to rebuild the interest model from your Zotero library."
+    )
+    parser.add_argument(
+        'command',
+        nargs='?',
+        choices=['update'],
+        help="The command to execute. Currently, only 'update' is supported."
+    )
+    args = parser.parse_args()
+
+    if args.command == 'update':
         print("Updating interest model...")
         ArxivEngine(mode='update')
         print("Update complete.")
     else:
         print("This script contains the core recommendation engine and is intended to be imported.")
-        print("To update the model, run: python arxiv_engine.py update")
-        print("To generate the daily HTML page, run: python arxiv_rank.py")
+        parser.print_help()
