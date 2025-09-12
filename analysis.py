@@ -14,6 +14,7 @@ Example:
 import os
 import sys
 import pickle
+import warnings
 import numpy as np
 import matplotlib.pyplot as plt
 import umap.umap_ as umap
@@ -378,9 +379,14 @@ def run_analysis(papers, embeddings, n_clusters=None):
     n_neighbors = min(15, len(papers) - 1)
     if n_neighbors >= 2:
         print("\n--- Reducing dimensionality with UMAP... ---")
-        reducer = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.1, n_components=2, random_state=42)
-        reduced_embeddings = reducer.fit_transform(embeddings)
-        plot_path = plot_clusters(reduced_embeddings, labels, n_clusters, cluster_names)
+        # Use a warnings context to suppress the UserWarning from UMAP about n_jobs
+        # being overridden when random_state is set. This is expected behavior for
+        # reproducibility, so we can safely ignore it.
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=UserWarning, module="umap")
+            reducer = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.1, n_components=2, random_state=42)
+            reduced_embeddings = reducer.fit_transform(embeddings)
+            plot_path = plot_clusters(reduced_embeddings, labels, n_clusters, cluster_names)
     else:
         print("\n--- Not enough papers to perform dimensionality reduction. Skipping cluster plot. ---")
 

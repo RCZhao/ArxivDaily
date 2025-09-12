@@ -278,10 +278,11 @@ class ArxivEngine(object):
         paper_data_for_embedding = []
         for paper in all_current_papers:
             key = paper['key']
-            if key not in cached_papers_map or paper['version'] > cached_papers_map[key]['version']:
+            # Re-embed if engine script changed, or if paper is new/updated in Zotero.
+            if not engine_unchanged or key not in cached_papers_map or paper['version'] > cached_papers_map[key]['version']:
                 title_cleaned = ArxivPaper._clean_text(paper['title'], for_embedding=True)
                 abstract_cleaned = ArxivPaper._clean_text(paper['abstract'], for_embedding=True)
-                texts_to_embed.append(title_cleaned + ' ' + abstract_cleaned)
+                texts_to_embed.append(title_cleaned + self.model.tokenizer.sep_token + abstract_cleaned)
                 paper_data_for_embedding.append(paper)
 
         # --- Step 3: Generate embeddings only for the delta ---
@@ -444,71 +445,80 @@ class ArxivEngine(object):
         
         return {}, None, None, None
 
-    def score_paper(self, paper, algorithm='z_score'):
-        """Calculates a recommendation score for a given feedparser entry.
+    def _score_papers_batch(self, papers_to_score, algorithm='z_score'):
+        """
+        Calculates recommendation scores for a batch of papers efficiently.
 
-        The score is a weighted combination of an author score (based on the
-        paper's authors appearing in the learned author model) and a semantic
-        score (based on the cosine similarity between the paper's content
-        embedding and the user's interest vector).
+        This method leverages batch processing for embedding generation and similarity
+        calculation, which is significantly faster than processing papers one by one,
+        especially on a GPU.
 
         Args:
-            paper (ArxivPaper): The paper object to score.
-            algorithm (str, optional): The scoring algorithm to use, 'z_score' or
-                'max_similarity'. Defaults to 'z_score'.
+            papers_to_score (list[ArxivPaper]): A list of paper objects to score.
+            algorithm (str): The scoring algorithm ('z_score' or 'max_similarity').
 
         Returns:
-            tuple[float, list[float]]: A tuple containing the total score and a list
-            of the component scores [author_score, semantic_score].
+            list[ArxivPaper]: The input list, with score-related attributes populated.
         """
-        author_scores, interest_vectors, means, stds = self.author_scores, self.interest_vectors, self.interest_similarity_means, self.interest_similarity_stds
+        if not papers_to_score:
+            return []
 
+        interest_vectors, means, stds = self.interest_vectors, self.interest_similarity_means, self.interest_similarity_stds
         if interest_vectors is None or len(interest_vectors) == 0:
             print("Interest vector(s) not found. Please run with 'update' mode first.")
-            return 0.0, [0.0, 0.0], None, None
+            return []
 
-        # 1. Calculate Author Score
-        raw_author_score = 0.0
-        for author_name in paper.authors:
-            raw_author_score += author_scores.get(author_name, 0.0)
+        # --- Step 1: Batch embed all papers ---
+        texts_to_embed = [p.title_for_embedding + self.model.tokenizer.sep_token + p.summary_for_embedding for p in papers_to_score]
+        all_embeddings = self.model.encode(
+            texts_to_embed,
+            convert_to_tensor=True,
+            show_progress_bar=True,
+            device=self.model.device
+        )
 
-        # Normalize the author score to a [0, 1] range using tanh.
-        # This prevents extremely prolific authors from dominating the score.
-        # The raw score is based on the number of papers in the library, so it can be > 1.
-        # tanh(1) ~= 0.76, tanh(2) ~= 0.96. This gives diminishing returns for more papers.
-        author_score = np.tanh(raw_author_score)
-        # 2. Calculate Semantic Score
-        text_to_embed = paper.title_for_embedding + ' ' + paper.summary_for_embedding
-        entry_embedding = self.model.encode(text_to_embed, convert_to_tensor=True, device=self.model.device)
-        # Calculate similarities against all cluster vectors. The result is a tensor of similarities.
-        similarities = util.cos_sim(interest_vectors, entry_embedding) # Shape: [num_clusters, 1]
+        # --- Step 2: Batch calculate all semantic similarities ---
+        # Resulting shape: [num_papers, num_clusters]
+        all_similarities = util.cos_sim(all_embeddings, interest_vectors)
 
-        # Choose algorithm for selecting the best cluster and its score
-        if algorithm == 'z_score' and means is not None and stds is not None:
-            if similarities.device != means.device:
-                means = means.to(similarities.device)
-            if similarities.device != stds.device:
-                stds = stds.to(similarities.device)
-            
-            z_scores = (similarities.squeeze() - means) / stds
-            cluster_id = torch.argmax(z_scores).item()
-            # Use the raw similarity from the best cluster for the final score
-            semantic_score = similarities[cluster_id].item()
-        else:
-            # Default to max_similarity if z_score is not possible or not chosen
+        # --- Step 3: Calculate scores for each paper using batched results ---
+        for i, paper in enumerate(tqdm(papers_to_score, desc="Calculating Scores")):
+            # 1. Calculate Author Score (this part remains per-paper)
+            raw_author_score = sum(self.author_scores.get(author, 0.0) for author in paper.authors)
+            author_score = np.tanh(raw_author_score)
+
+            # 2. Determine Semantic Score from pre-calculated similarities
+            similarities_for_paper = all_similarities[i] # Tensor of similarities for this paper
+
             if algorithm == 'z_score':
-                print("Warning: Dispersion data not found in cache. Falling back to 'max_similarity' algorithm. Run 'arxiv_engine.py update' to generate it.")
-            semantic_score = torch.max(similarities).item()
-            cluster_id = torch.argmax(similarities).item()
+                if means is not None and stds is not None:
+                    if similarities_for_paper.device != means.device:
+                        means = means.to(similarities_for_paper.device)
+                    if similarities_for_paper.device != stds.device:
+                        stds = stds.to(similarities_for_paper.device)
+                    z_scores = (similarities_for_paper - means) / stds
+                    cluster_id = torch.argmax(z_scores).item()
+                    semantic_score = similarities_for_paper[cluster_id].item()
+                else: # Fallback for z_score
+                    print("Warning: Dispersion data not found. Falling back to 'max_similarity'.")
+                    semantic_score = torch.max(similarities_for_paper).item()
+                    cluster_id = torch.argmax(similarities_for_paper).item()
+            else: # max_similarity algorithm
+                semantic_score = torch.max(similarities_for_paper).item()
+                cluster_id = torch.argmax(similarities_for_paper).item()
 
-        # 3. Combine scores
-        total_score = (author_score * AUTHOR_WEIGHT) + (semantic_score * SEMANTIC_WEIGHT)
+            # 3. Combine scores
+            total_score = (author_score * AUTHOR_WEIGHT) + (semantic_score * SEMANTIC_WEIGHT)
+            if paper.status in ['replace', 'cross-list']:
+                total_score *= 0.5
 
-        # Penalize replacements and cross-lists
-        if paper.status in ['replace', 'cross-list']:
-            total_score *= 0.5
+            # 4. Assign results to the paper object
+            paper.score = total_score
+            paper.score_list = [author_score, semantic_score]
+            paper.embedding = all_embeddings[i].cpu().numpy()
+            paper.cluster_id = cluster_id
 
-        return total_score, [author_score, semantic_score], entry_embedding.cpu().numpy(), cluster_id
+        return papers_to_score
 
     def _generate_tldr_sumy(self, text):
         """Generates a TLDR using the sumy library (LSA)."""
@@ -657,18 +667,8 @@ class ArxivEngine(object):
         papers_to_score = [ArxivPaper(result) for result in tqdm(client.results(search), total=len(paper_ids), desc="Fetching details")]
 
         # --- Step 3: Score the fetched papers ---
-        print(f"Scoring {len(papers_to_score)} new papers...")
-        scored_papers = []
-        for paper in tqdm(papers_to_score, desc="Scoring Papers"):
-            score, score_list, embedding, cluster_id = self.score_paper(paper, algorithm=algorithm)
-            if embedding is None: # score_paper might fail
-                continue
-            paper.score = score
-            paper.score_list = score_list
-            paper.embedding = embedding
-            paper.cluster_id = cluster_id
-            scored_papers.append(paper)
-
+        scored_papers = self._score_papers_batch(papers_to_score, algorithm=algorithm)
+        
         # --- Step 4: Filter, sort, and generate TLDRs ---
         sorted_papers = sorted(scored_papers, key=lambda p: p.score, reverse=True)
 
@@ -765,18 +765,7 @@ class ArxivEngine(object):
         print(f"\nTotal papers to score from backfill: {len(all_papers_to_score)}")
 
         # --- Score the fetched papers ---
-        print(f"Scoring {len(all_papers_to_score)} papers...")
-        scored_papers = []
-        for paper in tqdm(all_papers_to_score, desc="Scoring Historical Papers"):
-            score, score_list, embedding, cluster_id = self.score_paper(paper, algorithm=algorithm)
-            if embedding is None:
-                continue
-            paper.score = score
-            paper.score_list = score_list
-            paper.embedding = embedding
-            paper.cluster_id = cluster_id
-            scored_papers.append(paper)
-
+        scored_papers = self._score_papers_batch(all_papers_to_score, algorithm=algorithm)
         # --- Filter, sort, and generate TLDRs ---
         sorted_papers = sorted(scored_papers, key=lambda p: p.score, reverse=True)
 

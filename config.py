@@ -6,7 +6,7 @@ import configparser
 
 # --- Base Paths and Files ---
 BASE = os.path.dirname(os.path.abspath(__file__))
-EMBEDDING_MODEL = 'allenai-specter'
+EMBEDDING_MODEL = 'allenai/specter2_base'
 CACHE_FILE = os.path.join(BASE, 'arxiv_cache.pickle')
 CONFIG_FILE = os.path.join(BASE, 'config.ini')
 NLTK_DATA_PATH = os.path.join(BASE, 'nltk_data')

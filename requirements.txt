@@ -1,6 +1,7 @@
 feedparser
 requests
 beautifulsoup4
+torch>=2.6
 sentence_transformers
 numpy
 scikit-learn
