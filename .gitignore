@@ -12,13 +12,3 @@ __pycache__/
 
 # VSCode settings (optional)
 .vscode/
-
-# --- User-specific configuration ---
-# Ignore the local config file containing private API keys
-config.ini
-
-# --- Cache files ---
-*.pickle
-
-# --- NLTK data directory ---
-nltk_data/
