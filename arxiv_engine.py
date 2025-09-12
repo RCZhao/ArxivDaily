@@ -6,13 +6,17 @@ papers from arXiv RSS feeds, and scoring them based on a combination of
 author preference and semantic similarity of the content.
 """
 import sys
+import time
 import pickle
 import os
+from datetime import datetime, timedelta, timezone
 import re
+import argparse
 import feedparser
 import arxiv
 
 import torch
+from pyzotero import zotero
 import numpy as np
 from sentence_transformers import SentenceTransformer, util
 from tqdm import tqdm
@@ -28,7 +32,8 @@ from sumy.utils import get_stop_words
 from config import (
     EMBEDDING_MODEL, CACHE_FILE, AUTHOR_WEIGHT, SEMANTIC_WEIGHT,
     NLTK_DATA_PATH, ARXIV_CATEGORIES, MAX_ARXIV_RESULTS, TLDR_GENERATOR,
-    LLM_MODEL
+    LLM_MODEL, USE_RECENCY_WEIGHTING, RECENCY_HALF_LIFE_DAYS,
+    USE_POSITIONAL_WEIGHTING, FIRST_AUTHOR_BOOST
 )
 from zotero_client import ZoteroClient
 from llm_utils import query_llm
@@ -305,13 +310,36 @@ class ArxivEngine(object):
         favorite_embeddings = np.array(embeddings_list)
 
         author_scores = {}
-        print(f"Processing {len(papers)} papers from Zotero library...")
-        for paper in papers:
-            # Update author scores
+        print(f"Processing {len(papers)} papers from Zotero library for author scores...")
+        
+        # --- New Author Scoring Logic ---
+        now = datetime.now(timezone.utc)
+        decay_rate = np.log(2) / RECENCY_HALF_LIFE_DAYS if RECENCY_HALF_LIFE_DAYS > 0 else 0
+
+        for paper in tqdm(papers, desc="Calculating Author Scores"):
+            # --- Recency Weighting ---
+            recency_weight = 1.0
+            if USE_RECENCY_WEIGHTING and decay_rate > 0:
+                date_added_str = paper.get('dateAdded')
+                if date_added_str:
+                    try:
+                        # Zotero format is like '2024-01-15T10:00:00Z'
+                        date_added = datetime.fromisoformat(date_added_str.replace('Z', '+00:00'))
+                        days_since_added = (now - date_added).days
+                        recency_weight = np.exp(-decay_rate * max(0, days_since_added))
+                    except (ValueError, TypeError):
+                        pass # Ignore if date is malformed
+
+            # --- Positional and Recency Weighting ---
             num_authors = len(paper['authors'])
             if num_authors > 0:
-                for author_name in paper['authors']:
-                    author_scores[author_name] = author_scores.get(author_name, 0.0) + 1.0 / num_authors
+                for i, author_name in enumerate(paper['authors']):
+                    positional_weight = 1.0
+                    if USE_POSITIONAL_WEIGHTING and i == 0:
+                        positional_weight = FIRST_AUTHOR_BOOST
+                    
+                    score_contribution = (positional_weight * recency_weight) / num_authors
+                    author_scores[author_name] = author_scores.get(author_name, 0.0) + score_contribution
 
         # Run analysis before saving the model to get UMAP data
         print("\n--- Running Analysis of Favorite Papers ---")
@@ -440,10 +468,15 @@ class ArxivEngine(object):
             return 0.0, [0.0, 0.0], None, None
 
         # 1. Calculate Author Score
-        author_score = 0.0
+        raw_author_score = 0.0
         for author_name in paper.authors:
-            author_score += author_scores.get(author_name, 0.0)
+            raw_author_score += author_scores.get(author_name, 0.0)
 
+        # Normalize the author score to a [0, 1] range using tanh.
+        # This prevents extremely prolific authors from dominating the score.
+        # The raw score is based on the number of papers in the library, so it can be > 1.
+        # tanh(1) ~= 0.76, tanh(2) ~= 0.96. This gives diminishing returns for more papers.
+        author_score = np.tanh(raw_author_score)
         # 2. Calculate Semantic Score
         text_to_embed = paper.title_for_embedding + ' ' + paper.summary_for_embedding
         entry_embedding = self.model.encode(text_to_embed, convert_to_tensor=True, device=self.model.device)
@@ -501,10 +534,22 @@ class ArxivEngine(object):
             print(f"\n[ERROR] TLDR generation failed for a paper: {e}")
             return text[:250] + "..." if len(text) > 250 else text
 
+    def _generate_tldr_llm_single(self, paper):
+        """Generates a TLDR for a single paper using an LLM."""
+        prompt = f"Summarize the following academic abstract in a single, concise, and informative sentence. Do not start with 'This paper' or 'The authors'. Abstract: \"{paper.cleaned_summary}\""
+        try:
+            summary = query_llm(prompt, model_name=LLM_MODEL, temperature=0.2, max_tokens=100)
+            if summary:
+                return summary
+            return None # Indicate failure
+        except Exception as e:
+            print(f"\n[ERROR] LLM single-paper TLDR generation failed for {paper.arxiv_id}: {e}")
+            return None
+
     def _generate_tldrs_batch_llm(self, papers, batch_size=10):
         """
         Generates TLDRs for a list of papers in batches using an LLM.
-        This is much more efficient than one call per paper and avoids rate limits.
+        Includes a fallback to individual processing if a batch fails.
         """
         print(f"Generating TLDRs for {len(papers)} papers in batches of {batch_size} using LLM...")
 
@@ -527,15 +572,25 @@ class ArxivEngine(object):
             
             try:
                 summaries = query_llm(prompt, model_name=LLM_MODEL, temperature=0.2, max_tokens=2000, is_json=True)
-                if summaries and isinstance(summaries, dict):
-                    for paper in batch:
-                        paper.tldr = summaries.get(paper.arxiv_id, "TLDR generation failed for this paper.")
-                else:
+                if not (summaries and isinstance(summaries, dict)):
                     raise ValueError("LLM did not return a valid JSON dictionary.")
-            except Exception as e:
-                print(f"\n[ERROR] LLM batch TLDR generation failed for batch starting at index {i}: {e}")
+                
+                # Batch call was successful, assign TLDRs
                 for paper in batch:
-                    paper.tldr = "TLDR generation failed due to an error."
+                    paper.tldr = summaries.get(paper.arxiv_id, "TLDR generation failed for this paper.")
+
+            except Exception as e:
+                print(f"\n[WARNING] LLM batch TLDR generation failed for batch starting at index {i}: {e}. Falling back to individual processing for this batch.")
+                # Fallback to individual processing for this batch
+                for paper in batch:
+                    time.sleep(4) # To avoid hitting rate limits
+                    single_summary = self._generate_tldr_llm_single(paper)
+                    if single_summary:
+                        paper.tldr = single_summary
+                    else:
+                        # Second fallback to sumy
+                        print(f"  [FALLBACK] Using 'sumy' for paper {paper.arxiv_id}.")
+                        paper.tldr = self._generate_tldr_sumy(paper.cleaned_summary) + " (sumy fallback)"
 
     def get_recommendations(self, max_papers, min_score, algorithm='z_score'):
         """Fetches the latest daily papers using the arXiv RSS feed, scores them, and returns a sorted list.
@@ -569,16 +624,16 @@ class ArxivEngine(object):
             exception_info = feed.get('bozo_exception', 'The feed is malformed.')
             print(f"Error: Could not parse arXiv RSS feed. Error: {exception_info}")
             print("Aborting recommendation generation.")
-            return []
+            return [], []
         
         if 'Feed error for query' in feed.feed.title:
             print(f"Error: arXiv returned a feed error for the query '{query}'. Please check ARXIV_CATEGORIES in config.py.")
             print("Aborting recommendation generation.")
-            return []
+            return [], []
 
         # Filter for 'new' announcements only, to strictly follow the reference implementation.
         paper_ids = []
-        for entry in tqdm(feed.entries):
+        for entry in tqdm(feed.entries, desc="Parsing RSS feed"):
             # The 'arxiv_announce_type' is a custom tag in the arXiv RSS feed.
             announce_type = getattr(entry, 'arxiv_announce_type', None)
             if announce_type == 'new':
@@ -589,11 +644,11 @@ class ArxivEngine(object):
 
         if not paper_ids:
             print("No new papers found in the RSS feed for today's announcement. Exiting.")
-            return []
+            return [], []
 
         # --- Step 2: Fetch full paper details using the arxiv library in batches ---
         print(f"Found {len(paper_ids)} new papers. Fetching full details...")
-        client = arxiv.Client(page_size=100, delay_seconds=3, num_retries=5)
+        client = arxiv.Client(page_size=100, delay_seconds=10, num_retries=5)
         
         # The arxiv library can handle a large id_list and will paginate internally.
         search = arxiv.Search(id_list=paper_ids, sort_by=arxiv.SortCriterion.SubmittedDate)
@@ -638,13 +693,130 @@ class ArxivEngine(object):
         print(f'\nIn total: {len(scored_papers)} entries, recommending top {len(papers_to_show)}\n')
         return papers_to_show, sorted_papers
 
+    def get_historical_recommendations(self, start_date, end_date, max_papers, min_score, algorithm='z_score'):
+        """
+        Fetches papers from a specified date range, scores them, and returns a sorted list.
+
+        Args:
+            start_date (datetime): The start date of the period to fetch.
+            end_date (datetime): The end date of the period to fetch.
+            max_papers (int): The maximum number of papers to return.
+            min_score (float): The minimum score a paper must have to be included.
+            algorithm (str): The scoring algorithm to use ('z_score' or 'max_similarity').
+
+        Returns:
+            tuple[list[ArxivPaper], list[ArxivPaper]]: A tuple containing the list of recommended papers
+            and the list of all scored papers.
+        """
+        if self.interest_vectors is None or len(self.interest_vectors) == 0:
+            print("Interest vector(s) not found. Please run with 'update' mode first.")
+            return [], []
+        
+        print(f"Fetching papers from {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}...")
+        print("This may take a very long time.")
+
+        query_parts = [f"cat:{cat}" for cat in ARXIV_CATEGORIES]
+        categories_query = " OR ".join(query_parts)
+        
+        all_papers_to_score = []
+        
+        # --- Set up for progress bar over the entire date range ---
+        total_days = (end_date - start_date).days
+        if total_days < 0: total_days = 0
+        
+        days_per_chunk = 1  # Process in more efficient monthly chunks
+        current_start = start_date
+        
+        with tqdm(total=total_days + 1, unit="day", desc="Querying historical papers") as pbar:
+            while current_start <= end_date:
+                chunk_start_str = current_start.strftime('%Y-%m-%d')
+                # Define the end of the current chunk
+                current_end = current_start + timedelta(days=days_per_chunk - 1)
+                if current_end > end_date:
+                    current_end = end_date
+                chunk_end_str = current_end.strftime('%Y-%m-%d')
+
+                date_query = f"submittedDate:[{current_start.strftime('%Y%m%d')}0000 TO {current_end.strftime('%Y%m%d')}2359]"
+                full_query = f"({categories_query}) AND {date_query}"
+                
+                try:
+                    search = arxiv.Search(
+                        query=full_query,
+                        max_results=float('inf'),
+                        sort_by=arxiv.SortCriterion.SubmittedDate
+                    )
+                    client = arxiv.Client(page_size=200, delay_seconds=5, num_retries=5)
+                    results_iterator = client.results(search)
+                    
+                    # Inner tqdm shows progress for fetching details within the current chunk
+                    desc = f"Fetching {chunk_start_str} to {chunk_end_str}"
+                    chunk_papers = [ArxivPaper(result) for result in tqdm(results_iterator, desc=desc, leave=False)]
+                    
+                    all_papers_to_score.extend(chunk_papers)
+
+                except Exception as e:
+                    print(f"\nAn error occurred during query for period {chunk_start_str}: {e}")
+                
+                # --- Update progress bar and set the start for the next chunk ---
+                days_processed = (current_end - current_start).days + 1
+                pbar.update(days_processed)
+                current_start = current_end + timedelta(days=1)
+
+        print(f"\nTotal papers to score from backfill: {len(all_papers_to_score)}")
+
+        # --- Score the fetched papers ---
+        print(f"Scoring {len(all_papers_to_score)} papers...")
+        scored_papers = []
+        for paper in tqdm(all_papers_to_score, desc="Scoring Historical Papers"):
+            score, score_list, embedding, cluster_id = self.score_paper(paper, algorithm=algorithm)
+            if embedding is None:
+                continue
+            paper.score = score
+            paper.score_list = score_list
+            paper.embedding = embedding
+            paper.cluster_id = cluster_id
+            scored_papers.append(paper)
+
+        # --- Filter, sort, and generate TLDRs ---
+        sorted_papers = sorted(scored_papers, key=lambda p: p.score, reverse=True)
+
+        papers_to_process = []
+        for paper in sorted_papers:
+            if len(papers_to_process) >= max_papers:
+                break
+            if paper.score >= min_score:
+                papers_to_process.append(paper)
+
+        papers_to_show = []
+        if papers_to_process:
+            print(f"\n--- Generating TLDRs for top {len(papers_to_process)} recommended papers ---")
+            if TLDR_GENERATOR == 'llm':
+                self._generate_tldrs_batch_llm(papers_to_process)
+                papers_to_show = papers_to_process
+            else:
+                for paper in tqdm(papers_to_process, desc="Generating TLDRs"):
+                    paper.tldr = self._generate_tldr_sumy(paper.cleaned_summary)
+                    papers_to_show.append(paper)
+
+        print(f'\nIn total: {len(scored_papers)} entries, recommending top {len(papers_to_show)} papers\n')
+        return papers_to_show, scored_papers
+
 if __name__ == '__main__':
-    # This block allows the script to be run directly to update the interest model.
-    if len(sys.argv) > 1 and sys.argv[1] == 'update':
+    parser = argparse.ArgumentParser(
+        description="Core engine for arxiv_daily. Use 'update' to rebuild the interest model from your Zotero library."
+    )
+    parser.add_argument(
+        'command',
+        nargs='?',
+        choices=['update'],
+        help="The command to execute. Currently, only 'update' is supported."
+    )
+    args = parser.parse_args()
+
+    if args.command == 'update':
         print("Updating interest model...")
         ArxivEngine(mode='update')
         print("Update complete.")
     else:
         print("This script contains the core recommendation engine and is intended to be imported.")
-        print("To update the model, run: python arxiv_engine.py update")
-        print("To generate the daily HTML page, run: python arxiv_rank.py")
+        parser.print_help()

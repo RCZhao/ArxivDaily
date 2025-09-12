@@ -48,8 +48,9 @@ def load_and_process_papers():
 
     Returns:
         tuple: A tuple containing:
-            - list[dict]: A list of paper dictionaries with title, abstract, etc.
-            - np.ndarray: An array of embeddings for the papers.
+            - papers (list[dict]): A list of paper dictionaries.
+            - embeddings (np.ndarray): An array of embeddings for the papers.
+            - zotero_version (int): The version of the Zotero library from the cache.
     """
     print("\n--- Loading Favorite Papers and Embeddings from Unified Cache ---")
     if not os.path.exists(CACHE_FILE):
@@ -61,15 +62,16 @@ def load_and_process_papers():
         cached_data = pickle.load(f)
         papers = cached_data.get('papers', [])
         embeddings = cached_data.get('embeddings', None)
+        zotero_version = cached_data.get('zotero_version', -1)
 
     if not papers or embeddings is None:
         print("No papers found in the local cache. The cache might be empty or corrupted.")
         print("Please run 'python arxiv_engine.py update' to regenerate it.")
-        sys.exit(0)
+        sys.exit(1)
 
     print(f"\n--- Found and loaded {len(papers)} favorite papers and their embeddings from cache. ---")
 
-    return papers, embeddings
+    return papers, embeddings, zotero_version
 
 def get_cluster_names(papers, labels, n_clusters):
     """
@@ -387,12 +389,18 @@ def run_analysis(papers, embeddings, n_clusters=None):
 
     return plot_path, wordcloud_path, reducer, reduced_embeddings, labels
 
-def generate_daily_plot(rec_embeddings, rec_labels):
+def generate_daily_plot(rec_embeddings, rec_labels, output_filename='daily_cluster_map.png', title='Daily Recommendations on Favorite Papers Map'):
     """
-    Generates a daily cluster plot that overlays new recommendations on the base
+    Generates a cluster plot that overlays new recommendations on the base
     cluster map of favorite papers.
+
+    Args:
+        rec_embeddings (list): List of embeddings for recommended papers.
+        rec_labels (list): List of cluster labels for recommended papers.
+        output_filename (str): The filename for the output plot.
+        title (str): The title for the plot.
     """
-    print("\n--- Generating Daily Cluster Plot with Recommendations ---")
+    print(f"\n--- Generating Overlay Cluster Plot: {title} ---")
     if not rec_embeddings or rec_labels is None:
         print("Warning: No recommendation embeddings or labels provided. Skipping daily map generation.")
         return None, None
@@ -456,7 +464,7 @@ def generate_daily_plot(rec_embeddings, rec_labels):
         rec_handles.append(plt.Line2D([0], [0], marker=marker, color='w', label=f'Recs: {cluster_name}',
                                       markerfacecolor='red', markeredgecolor='black', markersize=15))
 
-    plt.title('Daily Recommendations on Favorite Papers Map', fontsize=20)
+    plt.title(title, fontsize=20)
     plt.xlabel('UMAP Dimension 1', fontsize=14)
     plt.ylabel('UMAP Dimension 2', fontsize=14)
     plt.grid(True, linestyle='--', alpha=0.6)
@@ -482,16 +490,16 @@ def generate_daily_plot(rec_embeddings, rec_labels):
     if not os.path.exists(ANALYSIS_OUTPUT_DIR):
         os.makedirs(ANALYSIS_OUTPUT_DIR)
     
-    plot_path = os.path.join(ANALYSIS_OUTPUT_DIR, 'daily_cluster_map.png')
+    plot_path = os.path.join(ANALYSIS_OUTPUT_DIR, output_filename)
     plt.savefig(plot_path, dpi=150, bbox_inches='tight')
     plt.close()
-    print(f"Daily cluster plot saved to: {plot_path}")
+    print(f"Overlay cluster plot saved to: {plot_path}")
     return plot_path, cluster_names
 
 def main():
     """Main function to run the analysis pipeline as a standalone script."""
-    # Load data directly from cache
-    papers, embeddings = load_and_process_papers()
+    # Load data and Zotero version directly from cache
+    papers, embeddings, zotero_version = load_and_process_papers()
     user_n_clusters = None
     if len(sys.argv) > 1:
         try:
