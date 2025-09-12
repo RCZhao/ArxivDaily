@@ -81,6 +81,7 @@ class ArxivPaper:
         self.score_list = [0.0, 0.0]
         self.embedding = None
         self.cluster_id = None
+        self.cluster_name = ""
 
     def _extract_arxiv_id(self):
         match = re.search(r'(\d+\.\d+)', self.entry_id)
@@ -208,16 +209,24 @@ class ArxivEngine(object):
         if self.mode == 'update':
             self.update_interest_model()
         
-        self.author_scores, self.interest_vectors, self.interest_similarity_means, self.interest_similarity_stds = self.load_score_files()
+        self.author_scores, self.interest_vectors, self.interest_similarity_means, self.interest_similarity_stds, self.cluster_names = self.load_score_files()
 
-        # Ensure interest_vector is a tensor on the same device as the model
-        # to prevent device mismatch errors during similarity calculation.
+        # Convert loaded interest models to tensors on the correct device.
+        # This now handles both the old list-based format and the new hierarchical dict format.
         if self.interest_vectors is not None:
-            self.interest_vectors = torch.from_numpy(np.array(self.interest_vectors)).to(self.model.device)
-        if self.interest_similarity_means is not None:
-            self.interest_similarity_means = torch.from_numpy(np.array(self.interest_similarity_means)).to(self.model.device)
-        if self.interest_similarity_stds is not None:
-            self.interest_similarity_stds = torch.from_numpy(np.array(self.interest_similarity_stds)).to(self.model.device)
+            if isinstance(self.interest_vectors, dict):
+                # New hierarchical format: dict of { (p_id, s_id): data }
+                self.interest_vectors = {k: torch.from_numpy(v).to(self.model.device) for k, v in self.interest_vectors.items()}
+                if self.interest_similarity_means:
+                    self.interest_similarity_means = {k: torch.tensor(v, device=self.model.device, dtype=torch.float32) for k, v in self.interest_similarity_means.items()}
+                if self.interest_similarity_stds:
+                    self.interest_similarity_stds = {k: torch.tensor(v, device=self.model.device, dtype=torch.float32) for k, v in self.interest_similarity_stds.items()}
+            else: # Assumes old list format
+                self.interest_vectors = torch.from_numpy(np.array(self.interest_vectors)).to(self.model.device)
+                if self.interest_similarity_means is not None:
+                    self.interest_similarity_means = torch.from_numpy(np.array(self.interest_similarity_means)).to(self.model.device)
+                if self.interest_similarity_stds is not None:
+                    self.interest_similarity_stds = torch.from_numpy(np.array(self.interest_similarity_stds)).to(self.model.device)
 
     def update_interest_model(self):
         """Updates the interest model based on a Zotero library.
@@ -346,48 +355,98 @@ class ArxivEngine(object):
         print("\n--- Running Analysis of Favorite Papers ---")
         from analysis import run_analysis as run_favorites_analysis
         # Call with the new signature, passing data directly
-        plot_path, wordcloud_path, reducer, reduced_embeddings, labels = run_favorites_analysis(papers, favorite_embeddings, n_clusters=None)
+        plot_path, wordcloud_path, reducer, reduced_embeddings, labels, cluster_names = run_favorites_analysis(papers, favorite_embeddings, n_clusters=None)
 
-        # --- Step 5: Calculate interest vectors based on clusters ---
-        interest_vectors = []
+        # --- Step 5: Calculate hierarchical interest vectors and dispersion ---
+        interest_vectors = {}
+        interest_similarity_means = {}
+        interest_similarity_stds = {}
+
         if len(papers) > 0 and labels is not None:
-            n_clusters = len(np.unique(labels))
-            if n_clusters > 1:
-                print(f"\nCalculating interest vectors for {n_clusters} clusters...")
-                for i in range(n_clusters):
-                    cluster_indices = np.where(labels == i)[0]
-                    if len(cluster_indices) > 0:
-                        cluster_embeddings = favorite_embeddings[cluster_indices]
-                        cluster_centroid = np.mean(cluster_embeddings, axis=0)
-                        interest_vectors.append(cluster_centroid)
-                print(f"Generated {len(interest_vectors)} cluster interest vectors.")
-            elif len(favorite_embeddings) > 0: # single cluster or no clustering case
-                print("\nOnly one cluster found, using a single global interest vector.")
-                interest_vectors.append(np.mean(favorite_embeddings, axis=0))
+            # `labels` is now a list of tuples: (primary_label, sub_label)
+            hierarchical_labels_np = np.array(labels)
+            primary_labels = hierarchical_labels_np[:, 0]
+            unique_primary_labels = np.unique(primary_labels)
 
-        # --- Step 5b: Calculate dispersion for each interest cluster ---
-        interest_similarity_means = []
-        interest_similarity_stds = []
-        if interest_vectors:
-            print(f"Calculating dispersion for {len(interest_vectors)} clusters...")
-            for i, centroid_embedding in enumerate(interest_vectors):
-                cluster_indices = np.where(labels == i)[0]
-                if len(cluster_indices) > 1:
-                    cluster_embeddings = favorite_embeddings[cluster_indices]
-                    # Convert numpy arrays to tensors for util.cos_sim
-                    centroid_tensor = torch.from_numpy(centroid_embedding).unsqueeze(0)
-                    cluster_tensor = torch.from_numpy(cluster_embeddings)
-                    
+            print(f"\nCalculating hierarchical interest vectors for {len(unique_primary_labels)} primary clusters...")
+
+            for p_id in unique_primary_labels:
+                # --- Process Primary Cluster ---
+                primary_indices = np.where(primary_labels == p_id)[0]
+                
+                if len(primary_indices) == 0:
+                    continue
+
+                primary_embeddings = favorite_embeddings[primary_indices]
+                primary_centroid = np.mean(primary_embeddings, axis=0)
+                
+                # Store primary cluster centroid (key: (primary_id, -1))
+                primary_key = (p_id, -1)
+                interest_vectors[primary_key] = primary_centroid
+
+                # Calculate and store dispersion for primary cluster
+                if len(primary_indices) > 1:
+                    centroid_tensor = torch.from_numpy(primary_centroid).unsqueeze(0)
+                    cluster_tensor = torch.from_numpy(primary_embeddings)
                     similarities = util.cos_sim(cluster_tensor, centroid_tensor).numpy().flatten()
                     
-                    mean_sim = np.mean(similarities)
-                    std_sim = np.std(similarities)
-                    interest_similarity_means.append(mean_sim)
-                    # Use a floor value to prevent division by zero for very tight clusters
-                    interest_similarity_stds.append(max(std_sim, 1e-6))
-                else: # Single-paper cluster or case where labels might not align
-                    interest_similarity_means.append(1.0)
-                    interest_similarity_stds.append(1e-6) # Small std dev, low chance of being picked
+                    interest_similarity_means[primary_key] = np.mean(similarities)
+                    interest_similarity_stds[primary_key] = max(np.std(similarities), 1e-6)
+                else:
+                    interest_similarity_means[primary_key] = 1.0
+                    interest_similarity_stds[primary_key] = 1e-6
+
+                # --- Process Sub-clusters ---
+                sub_labels_in_primary = hierarchical_labels_np[primary_indices, 1]
+                unique_sub_labels = np.unique(sub_labels_in_primary)
+
+                # Filter out the -1 label which indicates no sub-cluster
+                sub_cluster_ids = [s_id for s_id in unique_sub_labels if s_id != -1]
+
+                if not sub_cluster_ids:
+                    continue # No sub-clusters for this primary cluster
+
+                print(f"  - Found {len(sub_cluster_ids)} sub-clusters in primary cluster {p_id}.")
+                for s_id in sub_cluster_ids:
+                    sub_cluster_mask = (sub_labels_in_primary == s_id)
+                    original_indices_for_sub = primary_indices[sub_cluster_mask]
+
+                    if len(original_indices_for_sub) == 0: continue
+                    
+                    sub_embeddings = favorite_embeddings[original_indices_for_sub]
+                    sub_centroid = np.mean(sub_embeddings, axis=0)
+
+                    # Store sub-cluster centroid (key: (primary_id, sub_id))
+                    sub_key = (p_id, s_id)
+                    interest_vectors[sub_key] = sub_centroid
+
+                    # Calculate and store dispersion for sub-cluster
+                    if len(original_indices_for_sub) > 1:
+                        centroid_tensor = torch.from_numpy(sub_centroid).unsqueeze(0)
+                        cluster_tensor = torch.from_numpy(sub_embeddings)
+                        similarities = util.cos_sim(cluster_tensor, centroid_tensor).numpy().flatten()
+                        
+                        interest_similarity_means[sub_key] = np.mean(similarities)
+                        interest_similarity_stds[sub_key] = max(np.std(similarities), 1e-6)
+                    else:
+                        interest_similarity_means[sub_key] = 1.0
+                        interest_similarity_stds[sub_key] = 1e-6
+
+            print(f"Generated {len(interest_vectors)} hierarchical interest vectors in total.")
+
+        elif len(favorite_embeddings) > 0: # Fallback for no clustering
+            print("\nNo clusters found, using a single global interest vector.")
+            global_centroid = np.mean(favorite_embeddings, axis=0)
+            interest_vectors[(0, -1)] = global_centroid
+            if len(favorite_embeddings) > 1:
+                centroid_tensor = torch.from_numpy(global_centroid).unsqueeze(0)
+                cluster_tensor = torch.from_numpy(favorite_embeddings)
+                similarities = util.cos_sim(cluster_tensor, centroid_tensor).numpy().flatten()
+                interest_similarity_means[(0, -1)] = np.mean(similarities)
+                interest_similarity_stds[(0, -1)] = max(np.std(similarities), 1e-6)
+            else:
+                interest_similarity_means[(0, -1)] = 1.0
+                interest_similarity_stds[(0, -1)] = 1e-6
 
         # --- Step 6: Save all results to a single cache file ---
         print(f"Saving updated models to '{os.path.basename(CACHE_FILE)}'...")
@@ -402,7 +461,8 @@ class ArxivEngine(object):
             'embeddings': favorite_embeddings,
             'umap_reducer': reducer,
             'umap_embeddings_2d': reduced_embeddings,
-            'cluster_labels': labels
+            'cluster_labels': labels,
+            'cluster_names': cluster_names
         }
         with open(CACHE_FILE, 'wb') as f:
             pickle.dump(cache_data, f)
@@ -420,9 +480,9 @@ class ArxivEngine(object):
         """Loads the author scores and the interest vector from pickle files.
 
         Returns:
-            tuple: A tuple containing author_scores (dict), interest_vectors (list),
-            interest_similarity_means (list), and interest_similarity_stds (list).
-            Values can be None if the cache file doesn't exist.
+            tuple: A tuple containing author_scores (dict), interest_vectors (dict/list),
+            interest_similarity_means (dict/list), interest_similarity_stds (dict/list),
+            and cluster_names (dict). Values can be None/empty if the cache file doesn't exist.
         """
         if os.path.exists(CACHE_FILE) and os.path.getsize(CACHE_FILE) > 0:
             with open(CACHE_FILE, 'rb') as f:
@@ -439,11 +499,12 @@ class ArxivEngine(object):
                             interest_vectors = [interest_vector]
                     interest_similarity_means = cache_data.get('interest_similarity_means', None)
                     interest_similarity_stds = cache_data.get('interest_similarity_stds', None)
-                    return author_scores, interest_vectors, interest_similarity_means, interest_similarity_stds
+                    cluster_names = cache_data.get('cluster_names', {})
+                    return author_scores, interest_vectors, interest_similarity_means, interest_similarity_stds, cluster_names
                 except (EOFError, pickle.UnpicklingError) as e:
                     print(f"Warning: Could not load cache file '{os.path.basename(CACHE_FILE)}'. It might be corrupted. Error: {e}")
         
-        return {}, None, None, None
+        return {}, None, None, None, {}
 
     def _score_papers_batch(self, papers_to_score, algorithm='z_score'):
         """
@@ -463,12 +524,37 @@ class ArxivEngine(object):
         if not papers_to_score:
             return []
 
-        interest_vectors, means, stds = self.interest_vectors, self.interest_similarity_means, self.interest_similarity_stds
-        if interest_vectors is None or len(interest_vectors) == 0:
+        # --- Step 1: Unpack hierarchical model data and prepare for batch processing ---
+        # This handles both the new hierarchical dict format and the old list-based format.
+        if isinstance(self.interest_vectors, dict):
+            if not self.interest_vectors:
+                print("Interest vector dictionary is empty. Please run with 'update' mode first.")
+                return []
+            
+            # Unzip the dictionary into ordered lists/tensors
+            cluster_keys = list(self.interest_vectors.keys())
+            interest_vectors_tensor = torch.stack(list(self.interest_vectors.values()))
+            
+            means_tensor = None
+            stds_tensor = None
+            if self.interest_similarity_means and self.interest_similarity_stds:
+                # Create tensors from dict values, ordered by cluster_keys to ensure alignment
+                means_list = [self.interest_similarity_means[k] for k in cluster_keys]
+                stds_list = [self.interest_similarity_stds[k] for k in cluster_keys]
+                # self.interest_similarity_means contains 0-dim tensors, so stack them into a 1-D tensor
+                means_tensor = torch.stack(means_list)
+                stds_tensor = torch.stack(stds_list)
+        else: # Handle legacy list-based format for backward compatibility
+            cluster_keys = list(range(len(self.interest_vectors))) if self.interest_vectors is not None else []
+            interest_vectors_tensor = self.interest_vectors
+            means_tensor = self.interest_similarity_means
+            stds_tensor = self.interest_similarity_stds
+
+        if interest_vectors_tensor is None or len(interest_vectors_tensor) == 0:
             print("Interest vector(s) not found. Please run with 'update' mode first.")
             return []
 
-        # --- Step 1: Batch embed all papers ---
+        # --- Step 2: Batch embed all papers ---
         texts_to_embed = [p.title_for_embedding + self.model.tokenizer.sep_token + p.summary_for_embedding for p in papers_to_score]
         all_embeddings = self.model.encode(
             texts_to_embed,
@@ -477,46 +563,50 @@ class ArxivEngine(object):
             device=self.model.device
         )
 
-        # --- Step 2: Batch calculate all semantic similarities ---
-        # Resulting shape: [num_papers, num_clusters]
-        all_similarities = util.cos_sim(all_embeddings, interest_vectors)
+        # --- Step 3: Batch calculate all semantic similarities ---
+        # Resulting shape: [num_papers, num_total_clusters]
+        all_similarities = util.cos_sim(all_embeddings, interest_vectors_tensor)
 
-        # --- Step 3: Calculate scores for each paper using batched results ---
+        # --- Step 4: Calculate scores for each paper using batched results ---
         for i, paper in enumerate(tqdm(papers_to_score, desc="Calculating Scores")):
-            # 1. Calculate Author Score (this part remains per-paper)
+            # a. Calculate Author Score
             raw_author_score = sum(self.author_scores.get(author, 0.0) for author in paper.authors)
             author_score = np.tanh(raw_author_score)
 
-            # 2. Determine Semantic Score from pre-calculated similarities
-            similarities_for_paper = all_similarities[i] # Tensor of similarities for this paper
+            # b. Determine Semantic Score from pre-calculated similarities
+            similarities_for_paper = all_similarities[i]
 
-            if algorithm == 'z_score':
-                if means is not None and stds is not None:
-                    if similarities_for_paper.device != means.device:
-                        means = means.to(similarities_for_paper.device)
-                    if similarities_for_paper.device != stds.device:
-                        stds = stds.to(similarities_for_paper.device)
-                    z_scores = (similarities_for_paper - means) / stds
-                    cluster_id = torch.argmax(z_scores).item()
-                    semantic_score = similarities_for_paper[cluster_id].item()
-                else: # Fallback for z_score
+            best_cluster_index = -1
+            semantic_score = 0.0
+
+            if algorithm == 'z_score' and means_tensor is not None and stds_tensor is not None:
+                # z_scores are calculated against all clusters (primary and sub) at once
+                z_scores = (similarities_for_paper - means_tensor) / stds_tensor
+                best_cluster_index = torch.argmax(z_scores).item()
+                semantic_score = similarities_for_paper[best_cluster_index].item()
+            else:
+                # Fallback to max_similarity if z_score is not chosen or data is missing
+                if algorithm == 'z_score':
                     print("Warning: Dispersion data not found. Falling back to 'max_similarity'.")
-                    semantic_score = torch.max(similarities_for_paper).item()
-                    cluster_id = torch.argmax(similarities_for_paper).item()
-            else: # max_similarity algorithm
-                semantic_score = torch.max(similarities_for_paper).item()
-                cluster_id = torch.argmax(similarities_for_paper).item()
+                best_cluster_index = torch.argmax(similarities_for_paper).item()
+                semantic_score = similarities_for_paper[best_cluster_index].item()
+            
+            # Get the actual cluster ID (e.g., (2, 1) or 0) using the index
+            cluster_id = cluster_keys[best_cluster_index]
 
-            # 3. Combine scores
+            # tqdm.write(f"DEBUG: Paper '{paper.title_text[:50]}...' -> Score: {semantic_score:.3f}, Assigned Cluster ID: {cluster_id}")
+
+            # c. Combine scores
             total_score = (author_score * AUTHOR_WEIGHT) + (semantic_score * SEMANTIC_WEIGHT)
             if paper.status in ['replace', 'cross-list']:
                 total_score *= 0.5
 
-            # 4. Assign results to the paper object
+            # d. Assign results to the paper object
             paper.score = total_score
             paper.score_list = [author_score, semantic_score]
             paper.embedding = all_embeddings[i].cpu().numpy()
             paper.cluster_id = cluster_id
+            paper.cluster_name = self.cluster_names.get(cluster_id, "N/A")
 
         return papers_to_score
 

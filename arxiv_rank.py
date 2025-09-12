@@ -13,7 +13,7 @@ from arxiv_engine import ArxivEngine
 from analysis import generate_daily_plot, generate_score_distribution_plot
 from config import BASE, MAX_PAPERS_TO_SHOW, MIN_SCORE_THRESHOLD, AUTHOR_COLLAPSE_THRESHOLD, ANALYSIS_OUTPUT_DIR
 
-def generate_page(recommended_papers, out_file_name, page_title_date, cluster_plot_path=None, word_cloud_path=None, score_dist_plot_path=None, cluster_names=None):
+def generate_page(recommended_papers, out_file_name, page_title_date, cluster_plot_path=None, word_cloud_path=None, score_dist_plot_path=None):
     """Generates and writes the final HTML page using a Jinja2 template.
 
     Args:
@@ -23,7 +23,6 @@ def generate_page(recommended_papers, out_file_name, page_title_date, cluster_pl
         cluster_plot_path (str, optional): Path to the cluster visualization image.
         word_cloud_path (str, optional): Path to the word cloud image.
         score_dist_plot_path (str, optional): Path to the score distribution plot.
-        cluster_names (list[str], optional): Names for the interest clusters.
     """
     # --- Setup Jinja2 environment ---
     template_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
@@ -43,7 +42,6 @@ def generate_page(recommended_papers, out_file_name, page_title_date, cluster_pl
         'word_cloud_path': relative_wordcloud_path,
         'score_dist_plot_path': relative_score_dist_plot_path,
         'recommended_papers': recommended_papers,
-        'cluster_names': cluster_names,
         'author_collapse_threshold': AUTHOR_COLLAPSE_THRESHOLD,
     }
 
@@ -86,13 +84,12 @@ def run_daily_rank(algorithm):
     
     # Generate the daily plot with recommendations
     daily_plot_path = None
-    cluster_names_for_page = None
     if recommendations:
         try:
             # Extract embeddings and labels for the plot
             rec_embeddings = [paper.embedding for paper in recommendations]
             rec_labels = [paper.cluster_id for paper in recommendations]
-            daily_plot_path, cluster_names_for_page = generate_daily_plot(rec_embeddings, rec_labels)
+            daily_plot_path = generate_daily_plot(rec_embeddings, rec_labels)
         except Exception as e:
             print(f"Warning: Failed to generate daily cluster plot. Error: {e}")
     
@@ -112,8 +109,7 @@ def run_daily_rank(algorithm):
         page_title_date=page_date,
         cluster_plot_path=final_cluster_plot,
         word_cloud_path=word_cloud,
-        score_dist_plot_path=score_dist_plot,
-        cluster_names=cluster_names_for_page
+        score_dist_plot_path=score_dist_plot
     )
 
 def run_backfill(start_date, end_date, algorithm):
@@ -139,12 +135,11 @@ def run_backfill(start_date, end_date, algorithm):
 
     # Generate the cluster plot with backfill recommendations
     backfill_plot_path = None
-    cluster_names_for_page = None
     if recommendations:
         try:
             rec_embeddings = [paper.embedding for paper in recommendations]
             rec_labels = [paper.cluster_id for paper in recommendations]
-            backfill_plot_path, cluster_names_for_page = generate_daily_plot(
+            backfill_plot_path = generate_daily_plot(
                 rec_embeddings, 
                 rec_labels,
                 output_filename='backfill_cluster_map.png',
@@ -173,8 +168,7 @@ def run_backfill(start_date, end_date, algorithm):
         page_title_date=page_title_date_str,
         cluster_plot_path=final_cluster_plot,
         word_cloud_path=word_cloud,
-        score_dist_plot_path=score_dist_plot,
-        cluster_names=cluster_names_for_page
+        score_dist_plot_path=score_dist_plot
     )
 
 if __name__ == '__main__':

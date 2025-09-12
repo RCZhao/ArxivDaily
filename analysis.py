@@ -41,6 +41,8 @@ CUSTOM_STOPWORDS = {
     "within", "different", "can", "due", "may", "well", "new", "large", "high"
 }
 
+MIN_PAPERS_FOR_SUBCLUSTERING = 30
+
 
 def load_and_process_papers():
     """
@@ -159,35 +161,72 @@ def get_cluster_names_tfidf(papers, labels, n_clusters):
     print("Generated names:", cluster_names)
     return cluster_names
 
-def plot_clusters(reduced_embeddings, labels, n_clusters, cluster_names):
+def plot_clusters(reduced_embeddings, hierarchical_labels, n_clusters, hierarchical_cluster_names):
     """
-    Generates and saves a 2D scatter plot of the paper clusters.
+    Generates and saves a 2D scatter plot of the paper clusters, showing sub-clusters.
 
     Args:
         reduced_embeddings (np.ndarray): 2D coordinates of the papers.
-        labels (np.ndarray): Cluster label for each paper.
-        n_clusters (int): The number of clusters used.
-        cluster_names (list[str]): The generated meaningful names for the clusters.
+        hierarchical_labels (list[tuple]): Hierarchical cluster label (p_id, s_id) for each paper.
+        n_clusters (int): The number of primary clusters.
+        hierarchical_cluster_names (dict): A dict mapping (p_id, s_id) to a name.
     """
-    print("Generating cluster plot...")
-    plt.figure(figsize=(16, 10))
-    scatter = plt.scatter(
-        reduced_embeddings[:, 0],
-        reduced_embeddings[:, 1],
-        c=labels,
-        cmap='viridis',
-        s=60,
-        alpha=0.8
-    )
+    print("Generating hierarchical cluster plot with sub-cluster coloring...")
+    plt.figure(figsize=(18, 14))  # Increased size for better legend
 
-    plt.title(f'UMAP Projection of Favorite Papers ({n_clusters} Clusters)', fontsize=20)
+    labels_np = np.array(hierarchical_labels)
+    primary_labels = labels_np[:, 0]
+    sub_labels = labels_np[:, 1]
+
+    # Define base colormaps for primary clusters for better visual grouping
+    base_cmaps = ['Blues', 'Oranges', 'Greens', 'Reds', 'Purples', 'Greys', 'YlOrBr', 'BuPu', 'GnBu', 'YlGn']
+    
+    legend_handles = []
+
+    # Plot each sub-cluster group individually
+    for p_id in range(n_clusters):
+        primary_mask = (primary_labels == p_id)
+        if not np.any(primary_mask):
+            continue
+
+        # Get colormap for this primary cluster
+        cmap = plt.cm.get_cmap(base_cmaps[p_id % len(base_cmaps)])
+        
+        unique_sub_labels_in_primary = sorted(np.unique(sub_labels[primary_mask]))
+        num_sub_clusters = len(unique_sub_labels_in_primary)
+        
+        # Generate distinct colors for each sub-cluster from the primary's colormap
+        sub_colors = cmap(np.linspace(0.4, 0.95, num_sub_clusters))
+
+        for i, s_id in enumerate(unique_sub_labels_in_primary):
+            color = sub_colors[i]
+            mask = primary_mask & (sub_labels == s_id)
+            plt.scatter(
+                reduced_embeddings[mask, 0],
+                reduced_embeddings[mask, 1],
+                color=color,
+                s=60,
+                alpha=0.8
+            )
+            
+            # Add handle to legend
+            cluster_key = (p_id, s_id)
+            cluster_name = hierarchical_cluster_names.get(cluster_key)
+            if cluster_name:
+                legend_handles.append(
+                    plt.Line2D([0], [0], marker='o', color='w', label=cluster_name,
+                               markerfacecolor=color, markersize=10)
+                )
+
+    plt.title(f'UMAP Projection of Favorite Papers ({n_clusters} Primary Clusters)', fontsize=20)
     plt.xlabel('UMAP Dimension 1', fontsize=14)
     plt.ylabel('UMAP Dimension 2', fontsize=14)
     plt.grid(True, linestyle='--', alpha=0.6)
     
-    if n_clusters > 1:
-        legend_elements = scatter.legend_elements()
-        plt.legend(legend_elements[0], cluster_names, loc='best', title="Clusters", fontsize=20, title_fontsize=22)
+    if legend_handles:
+        # Sort legend handles to group by primary cluster
+        legend_handles.sort(key=lambda h: h.get_label())
+        plt.legend(handles=legend_handles, loc='best', title="Interest Clusters", fontsize=10, title_fontsize=12)
 
     if not os.path.exists(ANALYSIS_OUTPUT_DIR):
         os.makedirs(ANALYSIS_OUTPUT_DIR)
@@ -195,7 +234,7 @@ def plot_clusters(reduced_embeddings, labels, n_clusters, cluster_names):
     plot_path = os.path.join(ANALYSIS_OUTPUT_DIR, 'cluster_visualization.png')
     plt.savefig(plot_path, dpi=150, bbox_inches='tight')
     plt.close()
-    print(f"Cluster plot saved to: {plot_path}")
+    print(f"Hierarchical cluster plot saved to: {plot_path}")
     return plot_path
 
 def generate_word_cloud(papers):
@@ -329,6 +368,7 @@ def run_analysis(papers, embeddings, n_clusters=None):
         tuple: A tuple containing plot path, wordcloud path, UMAP reducer, 2D embeddings, and cluster labels.
     """
 
+
     if not papers:
         return None, None, None, None, None
 
@@ -366,12 +406,66 @@ def run_analysis(papers, embeddings, n_clusters=None):
     print(f"\n--- Performing K-Means clustering with {n_clusters} clusters... ---")
     if n_clusters > 0:
         kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init='auto')
-        labels = kmeans.fit_predict(embeddings)
+        primary_labels = kmeans.fit_predict(embeddings)
     else:
-        labels = np.zeros(len(papers), dtype=int)
+        primary_labels = np.zeros(len(papers), dtype=int)
 
-    # Generate meaningful names for clusters
-    cluster_names = get_cluster_names(papers, labels, n_clusters) if n_clusters > 1 else ["All Papers"]
+    # --- Hierarchical Naming and Sub-clustering ---
+    print("\n--- Generating Hierarchical Names and Performing Sub-clustering ---")
+    primary_cluster_names_list = get_cluster_names(papers, primary_labels, n_clusters) if n_clusters > 1 else ["All Papers"]
+    hierarchical_cluster_names = {}
+    for i, name in enumerate(primary_cluster_names_list):
+        hierarchical_cluster_names[(i, -1)] = name
+
+    # The final labels will be a list of tuples: (primary_cluster_id, sub_cluster_id)
+    # sub_cluster_id is -1 if no sub-clustering is performed.
+    hierarchical_labels = [(label, -1) for label in primary_labels]
+
+    for i in range(n_clusters):
+        cluster_indices = np.where(primary_labels == i)[0]
+
+        if len(cluster_indices) < MIN_PAPERS_FOR_SUBCLUSTERING:
+            print(f"Primary cluster {i} ('{hierarchical_cluster_names.get((i, -1))}') has {len(cluster_indices)} papers. Skipping sub-clustering (threshold: {MIN_PAPERS_FOR_SUBCLUSTERING}).")
+            continue
+
+        print(f"Primary cluster {i} ('{hierarchical_cluster_names.get((i, -1))}') has {len(cluster_indices)} papers. Attempting sub-clustering...")
+        cluster_embeddings = embeddings[cluster_indices]
+        cluster_papers = [papers[j] for j in cluster_indices]
+
+        # Auto-detect optimal number of sub-clusters using silhouette score
+        best_k_sub = 1
+        best_score_sub = -1
+        k_range_sub = range(2, min(10, len(cluster_indices)))  # Limit max sub-clusters for practicality
+
+        if len(k_range_sub) < 1:
+            print(f"  - Not enough papers in cluster {i} for meaningful sub-clustering.")
+            continue
+
+        for k in k_range_sub:
+            kmeans_tmp = KMeans(n_clusters=k, random_state=42, n_init='auto')
+            labels_tmp = kmeans_tmp.fit_predict(cluster_embeddings)
+            score = silhouette_score(cluster_embeddings, labels_tmp)
+            if score > best_score_sub:
+                best_score_sub = score
+                best_k_sub = k
+
+        if best_k_sub > 1:
+            print(f"  - Found {best_k_sub} optimal sub-clusters for primary cluster {i} with score {best_score_sub:.4f}.")
+            kmeans_sub = KMeans(n_clusters=best_k_sub, random_state=42, n_init='auto')
+            sub_labels = kmeans_sub.fit_predict(cluster_embeddings)
+
+            # Generate and store names for sub-clusters
+            sub_cluster_names_list = get_cluster_names(cluster_papers, sub_labels, best_k_sub)
+            for s_id, s_name in enumerate(sub_cluster_names_list):
+                primary_name = hierarchical_cluster_names.get((i, -1), f"Cluster {i}")
+                hierarchical_cluster_names[(i, s_id)] = f"{primary_name} / {s_name}"
+
+            # Update hierarchical labels for the papers in this primary cluster
+            for j, sub_label in enumerate(sub_labels):
+                original_paper_index = cluster_indices[j]
+                hierarchical_labels[original_paper_index] = (i, sub_label)
+        else:
+            print(f"  - No meaningful sub-clusters found for primary cluster {i} (best k=1).")
 
     plot_path = None
     reducer = None
@@ -379,41 +473,46 @@ def run_analysis(papers, embeddings, n_clusters=None):
     n_neighbors = min(15, len(papers) - 1)
     if n_neighbors >= 2:
         print("\n--- Reducing dimensionality with UMAP... ---")
-        # Use a warnings context to suppress the UserWarning from UMAP about n_jobs
-        # being overridden when random_state is set. This is expected behavior for
-        # reproducibility, so we can safely ignore it.
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=UserWarning, module="umap")
             reducer = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.1, n_components=2, random_state=42)
             reduced_embeddings = reducer.fit_transform(embeddings)
-            plot_path = plot_clusters(reduced_embeddings, labels, n_clusters, cluster_names)
+            plot_path = plot_clusters(reduced_embeddings, hierarchical_labels, n_clusters, hierarchical_cluster_names)
     else:
         print("\n--- Not enough papers to perform dimensionality reduction. Skipping cluster plot. ---")
 
     print("\n--- Generating Word Cloud... ---")
     wordcloud_path = generate_word_cloud(papers)
 
-    return plot_path, wordcloud_path, reducer, reduced_embeddings, labels
+    # NOTE: The returned labels are now hierarchical: list[(primary_label, sub_label)].
+    # The calling function (in arxiv_engine.py) will need to be updated to handle this structure.
+    return plot_path, wordcloud_path, reducer, reduced_embeddings, hierarchical_labels, hierarchical_cluster_names
 
 def generate_daily_plot(rec_embeddings, rec_labels, output_filename='daily_cluster_map.png', title='Daily Recommendations on Favorite Papers Map'):
     """
     Generates a cluster plot that overlays new recommendations on the base
-    cluster map of favorite papers.
+    hierarchical cluster map of favorite papers, with improved visual distinctions.
+
+    - Base papers are solid, semi-transparent points.
+    - Recommended papers are large, hollow points.
+    - Primary clusters have distinct colors.
+    - Sub-clusters share a color family with their primary cluster but have unique markers.
+    - Recommendations match the color and marker of their assigned cluster.
 
     Args:
         rec_embeddings (list): List of embeddings for recommended papers.
-        rec_labels (list): List of cluster labels for recommended papers.
+        rec_labels (list[tuple]): List of hierarchical cluster labels (p_id, s_id) for recommended papers.
         output_filename (str): The filename for the output plot.
         title (str): The title for the plot.
     """
-    print(f"\n--- Generating Overlay Cluster Plot: {title} ---")
+    print(f"\n--- Generating Enhanced Overlay Cluster Plot: {title} ---")
     if not rec_embeddings or rec_labels is None:
         print("Warning: No recommendation embeddings or labels provided. Skipping daily map generation.")
-        return None, None
+        return None
 
     if not os.path.exists(CACHE_FILE):
         print("Cache file not found. Cannot generate daily plot.")
-        return None, None
+        return None
 
     try:
         with open(CACHE_FILE, 'rb') as f:
@@ -422,75 +521,111 @@ def generate_daily_plot(rec_embeddings, rec_labels, output_filename='daily_clust
         reducer = cached_data.get('umap_reducer')
         base_embeddings_2d = cached_data.get('umap_embeddings_2d')
         base_labels = cached_data.get('cluster_labels')
-        base_papers = cached_data.get('papers')
+        cluster_names = cached_data.get('cluster_names')
         
-        if reducer is None or base_embeddings_2d is None or base_labels is None or base_papers is None:
-            print("Cache is missing necessary UMAP data. Run 'arxiv_engine.py update' to generate it.")
+        if reducer is None or base_embeddings_2d is None or base_labels is None or cluster_names is None:
+            print("Cache is missing necessary UMAP/cluster data. Run 'arxiv_engine.py update' to generate it.")
             return None
     except Exception as e:
         print(f"Error loading UMAP data from cache: {e}")
         return None
 
-    # Project new recommendations into the existing 2D space
+    # --- Plotting Setup ---
+    plt.figure(figsize=(18, 14))
+    base_labels_np = np.array(base_labels)
+
+    # Define markers for sub-clusters
+    MARKERS = ['o', 's', 'P', 'X', '*', 'D', 'v', '^', '< ', '>']
+
+    # Build color and marker maps from the definitive list of all clusters
+    primary_to_sub_keys = {}
+    for p_id, s_id in cluster_names.keys():
+        if p_id not in primary_to_sub_keys:
+            primary_to_sub_keys[p_id] = []
+        primary_to_sub_keys[p_id].append(s_id)
+
+    base_cmaps = ['Blues', 'Oranges', 'Greens', 'Reds', 'Purples', 'Greys', 'YlOrBr', 'BuPu', 'GnBu', 'YlGn']
+    color_map = {}
+    marker_map = {}
+    
+    sorted_primary_ids = sorted(primary_to_sub_keys.keys())
+    for p_id in sorted_primary_ids:
+        cmap = plt.cm.get_cmap(base_cmaps[p_id % len(base_cmaps)])
+        
+        sub_ids = sorted(primary_to_sub_keys[p_id])
+        num_sub_clusters = len(sub_ids)
+        sub_colors = cmap(np.linspace(0.4, 0.95, num_sub_clusters))
+        
+        for i, s_id in enumerate(sub_ids):
+            cluster_key = (p_id, s_id)
+            color_map[cluster_key] = sub_colors[i]
+            if s_id == -1:
+                marker_map[cluster_key] = 'o'  # Default circle for primary-only
+            else:
+                # Cycle through markers for sub-clusters, excluding the primary-only case
+                sub_cluster_index = [sid for sid in sub_ids if sid != -1].index(s_id)
+                marker_map[cluster_key] = MARKERS[sub_cluster_index % len(MARKERS)]
+
+    # --- 1. Plot base favorite papers (background) ---
+    # Plot each cluster separately to assign markers correctly
+    for (p_id, s_id), name in cluster_names.items():
+        mask = (base_labels_np[:, 0] == p_id) & (base_labels_np[:, 1] == s_id)
+        if not np.any(mask):
+            continue
+        plt.scatter(
+            base_embeddings_2d[mask, 0], base_embeddings_2d[mask, 1],
+            c=[color_map.get((p_id, s_id), 'lightgrey')],
+            marker=marker_map.get((p_id, s_id), 'o'),
+            s=60, 
+            alpha=0.5,  # Increased alpha as requested
+            label=name
+        )
+
+    # --- 2. Project and plot new recommendations (foreground) ---
     print("Projecting new recommendations into the UMAP space...")
     rec_embeddings_2d = reducer.transform(np.array(rec_embeddings))
 
-    # Get cluster names for the legend
-    n_clusters = len(np.unique(base_labels))
-    cluster_names = get_cluster_names(base_papers, base_labels, n_clusters) if n_clusters > 1 else ["All Papers"]
-
-    # --- Plotting ---
-    plt.figure(figsize=(16, 10))
-    
-    # Plot base favorite papers
-    base_scatter = plt.scatter(
-        base_embeddings_2d[:, 0], base_embeddings_2d[:, 1], c=base_labels,
-        cmap='viridis', s=60, alpha=0.5
-    )
-
-    # --- Plot new recommendations with different markers ---
-    markers = ['*', 's', '^', 'D', 'o', 'p', 'h']
-    rec_handles = []
-
-    # Plot each recommendation point individually to control marker and add annotation
-    for i, (pos, label) in enumerate(zip(rec_embeddings_2d, rec_labels), 1):
-        marker = markers[label % len(markers)]
+    for i, (pos, cluster_id) in enumerate(zip(rec_embeddings_2d, rec_labels), 1):
+        color = color_map.get(cluster_id, 'grey') # Fallback to grey, no more red
+        marker = marker_map.get(cluster_id, 'o') # Default to circle
+        
+        # Plot a large, hollow marker for the recommendation
         plt.scatter(
-            pos[0], pos[1], c='red', marker=marker, s=300,
-            edgecolor='black', zorder=10
+            pos[0], pos[1],
+            marker=marker,
+            facecolors='none',
+            edgecolors=[color],
+            s=400,
+            linewidth=2.5,
+            zorder=10
         )
         # Annotate with rank
-        plt.text(pos[0] + 0.05, pos[1] + 0.05, str(i), color='black', fontsize=12, weight='bold', zorder=11)
-
-    # Create legend handles for recommendations to avoid duplicates
-    unique_rec_labels = sorted(list(np.unique(rec_labels)))
-    for label in unique_rec_labels:
-        marker = markers[label % len(markers)]
-        cluster_name = cluster_names[label] if label < len(cluster_names) else f"Cluster {label}"
-        rec_handles.append(plt.Line2D([0], [0], marker=marker, color='w', label=f'Recs: {cluster_name}',
-                                      markerfacecolor='red', markeredgecolor='black', markersize=15))
+        plt.text(pos[0], pos[1], str(i), color='black',
+                 fontsize=10, weight='bold', zorder=12, ha='center', va='center')
 
     plt.title(title, fontsize=20)
     plt.xlabel('UMAP Dimension 1', fontsize=14)
     plt.ylabel('UMAP Dimension 2', fontsize=14)
     plt.grid(True, linestyle='--', alpha=0.6)
     
-    # --- Create a single, combined legend ---
-    all_handles = []
-    all_labels = []
+    # --- 3. Create a comprehensive legend ---
+    legend_handles = []
+    sorted_keys = sorted(cluster_names.keys())
+    for key in sorted_keys:
+        name = cluster_names[key]
+        color = color_map.get(key)
+        marker = marker_map.get(key, 'o')
+        if name and color is not None:
+             legend_handles.append(
+                plt.Line2D([0], [0], marker=marker, color='w', label=name,
+                           markerfacecolor=color, markersize=12)
+            )
 
-    # Add handles and labels from the base favorite clusters
-    if n_clusters > 1:
-        base_handles, _ = base_scatter.legend_elements()
-        all_handles.extend(base_handles)
-        all_labels.extend(cluster_names)
-    
-    # Add handles and labels for the recommendations from different clusters
-    all_handles.extend(rec_handles)
-    all_labels.extend([h.get_label() for h in rec_handles])
+    rec_handle = plt.Line2D([0], [0], marker='o', color='w', label="Today's Recommendation (hollow)",
+                            markerfacecolor='none', markeredgecolor='grey', markeredgewidth=2, markersize=12)
+    legend_handles.append(rec_handle)
 
-    # Create the combined legend
-    plt.legend(all_handles, all_labels, loc='best', title="Legend", fontsize=20, title_fontsize=22)
+    plt.legend(handles=legend_handles, loc='best', title="Interest Clusters", fontsize=10, title_fontsize=12)
 
     # Save plot
     if not os.path.exists(ANALYSIS_OUTPUT_DIR):
@@ -500,7 +635,8 @@ def generate_daily_plot(rec_embeddings, rec_labels, output_filename='daily_clust
     plt.savefig(plot_path, dpi=150, bbox_inches='tight')
     plt.close()
     print(f"Overlay cluster plot saved to: {plot_path}")
-    return plot_path, cluster_names
+    return plot_path
+
 
 def main():
     """Main function to run the analysis pipeline as a standalone script."""
