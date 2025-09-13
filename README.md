@@ -33,9 +33,35 @@
     cd arxiv_daily
     ```
 
-2.  **Install Dependencies** (Python 3.10+ is recommended)
+2.  **Create Environment and Install Dependencies** (Python 3.10+ is recommended)
+
+    This project uses `conda` / `mamba` to manage dependencies. We strongly recommend using **Mamba**, a high-speed replacement for conda that resolves environments much faster.
+
+    a. **Install Mamba** into your base conda environment (only needs to be done once):
     ```bash
-    pip install -r requirements.txt
+    conda install -n base conda-forge::mamba
+    ```
+
+    **For Local Development (with NVIDIA GPU):**
+    This setup provides the necessary compilers and CUDA toolkit within the conda environment to build `llama-cpp-python` with GPU acceleration.
+
+    b. Create and activate the environment using Mamba:
+    ```bash
+    mamba env create -f environment.yml
+    conda activate arxiv-daily
+    ```
+
+    c. **(Crucial Step)** Manually install `llama-cpp-python` with GPU support. This command uses the compilers and CUDA toolkit installed by Mamba in your environment.
+    *(This step is performed separately because it needs to compile against the specific CUDA and C++ toolchain provided by the conda environment, rather than system-wide tools, ensuring full compatibility.)*
+    ```bash
+    CMAKE_ARGS="-DGGML_CUDA=on" pip install llama-cpp-python --no-cache-dir --force-reinstall
+    ```
+
+    **For CPU-only environments (including GitHub Actions):**
+    This is the standard setup for machines without a dedicated NVIDIA GPU. It automatically installs CPU-only versions of libraries.
+    ```bash
+    mamba env create -f environment.cpu.yml
+    conda activate arxiv-daily-cpu
     ```
 
 3.  **Configure Zotero API Access**

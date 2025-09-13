@@ -5,7 +5,6 @@ for learning user interests from a list of favorite papers, fetching new
 papers from arXiv RSS feeds, and scoring them based on a combination of
 author preference and semantic similarity of the content.
 """
-import sys
 import time
 import pickle
 import os
@@ -16,7 +15,6 @@ import feedparser
 import arxiv
 
 import torch
-from pyzotero import zotero
 import numpy as np
 from sentence_transformers import SentenceTransformer, util
 from tqdm import tqdm
@@ -31,97 +29,13 @@ from sumy.utils import get_stop_words
 
 from config import (
     EMBEDDING_MODEL, CACHE_FILE, AUTHOR_WEIGHT, SEMANTIC_WEIGHT,
-    NLTK_DATA_PATH, ARXIV_CATEGORIES, MAX_ARXIV_RESULTS, TLDR_GENERATOR,
+    NLTK_DATA_PATH, ARXIV_CATEGORIES, MAX_ARXIV_RESULTS, TLDR_GENERATOR, LLM_PROVIDER, CLUSTER_NAMING_METHOD,
     LLM_MODEL, USE_RECENCY_WEIGHTING, RECENCY_HALF_LIFE_DAYS,
     USE_POSITIONAL_WEIGHTING, FIRST_AUTHOR_BOOST
 )
 from zotero_client import ZoteroClient
 from llm_utils import query_llm
-
-class ArxivPaper:
-    """Represents a single arXiv paper and its associated metadata and scores."""
-
-    # Create a translation table for cleaning text for embedding.
-    _PUNCTUATION_TO_REPLACE = '''$,'.()[]{}?!&*/\`~<>^%-+|"'''
-    _TRANSLATION_TABLE = str.maketrans(_PUNCTUATION_TO_REPLACE, ' ' * len(_PUNCTUATION_TO_REPLACE))
-
-    def __init__(self, arxiv_result):
-        """
-        Initializes an ArxivPaper object from an arxiv.Result object or a feedparser entry.
-
-        Args:
-            arxiv_result (arxiv.Result or dict): The paper data.
-        """
-        if isinstance(arxiv_result, arxiv.Result):
-            self.entry_id = arxiv_result.entry_id
-            self.raw_title = f"{arxiv_result.title} (arXiv:{arxiv_result.get_short_id()})"
-            self.raw_summary = arxiv_result.summary
-            self.authors = [author.name for author in arxiv_result.authors]
-            self.primary_category = arxiv_result.primary_category
-        else: # Handle feedparser-like dict for backward compatibility if needed
-            self.entry_id = arxiv_result.get('link', '')
-            self.raw_title = arxiv_result.get('title', '')
-            self.raw_summary = arxiv_result.get('summary', '')
-            self.authors = [a.strip() for a in arxiv_result.get('author', '').split(',')]
-            self.primary_category = arxiv_result.get('category', '')
-
-        # Processed data for display
-        self.arxiv_id = self._extract_arxiv_id()
-        self.title_text = self._extract_title_text()
-        self.status = self._determine_status()
-        self.cleaned_summary = ArxivPaper._clean_text(self.raw_summary, for_embedding=False)
-
-        # Processed data for embedding, stored on the object
-        self.title_for_embedding = ArxivPaper._clean_text(self.title_text, for_embedding=True)
-        self.summary_for_embedding = ArxivPaper._clean_text(self.raw_summary, for_embedding=True)
-
-        # Data to be filled in by the engine
-        self.tldr = ""
-        self.score = 0.0
-        self.score_list = [0.0, 0.0]
-        self.embedding = None
-        self.cluster_id = None
-        self.cluster_name = ""
-
-    def _extract_arxiv_id(self):
-        match = re.search(r'(\d+\.\d+)', self.entry_id)
-        return match.group(1) if match else ""
-
-    def _extract_title_text(self):
-        match = re.match(r"^(.*)\s+\(arXiv:(\d+\.\d+)(?:v\d+)?\)", self.raw_title)
-        return match.group(1).strip() if match else self.raw_title.strip()
-
-    def _determine_status(self):
-        summary_lower = self.raw_summary.lower()
-        if 'announce type: replace' in summary_lower:
-            return 'replace'
-        elif 'announce type: cross' in summary_lower:
-            return 'cross-list'
-        return ''
-
-    @staticmethod
-    def _clean_text(text, for_embedding=False):
-        """
-        Cleans text for display or for embedding.
-
-        Args:
-            text (str): The input string.
-            for_embedding (bool): If True, applies cleaning specific for embedding
-                                  (lowercasing, punctuation removal).
-
-        Returns:
-            str: The cleaned text.
-        """
-        # Common cleaning: remove HTML tags and "Abstract:" prefix
-        cleaned_text = re.sub(r'<[^>]*>', '', text)
-        cleaned_text = re.sub(r'.*?Abstract:\s*', '', cleaned_text, count=1, flags=re.IGNORECASE | re.DOTALL)
-
-        if for_embedding:
-            cleaned_text = cleaned_text.lower()
-            cleaned_text = cleaned_text.translate(ArxivPaper._TRANSLATION_TABLE)
-
-        # Final whitespace normalization
-        return ' '.join(cleaned_text.split())
+from arxiv_paper import ArxivPaper
 
 def _initialize_nltk():
     """
@@ -462,7 +376,8 @@ class ArxivEngine(object):
             'umap_reducer': reducer,
             'umap_embeddings_2d': reduced_embeddings,
             'cluster_labels': labels,
-            'cluster_names': cluster_names
+            'cluster_names': cluster_names,
+            'cluster_naming_method': CLUSTER_NAMING_METHOD
         }
         with open(CACHE_FILE, 'wb') as f:
             pickle.dump(cache_data, f)
@@ -636,7 +551,7 @@ class ArxivEngine(object):
 
     def _generate_tldr_llm_single(self, paper):
         """Generates a TLDR for a single paper using an LLM."""
-        prompt = f"Summarize the following academic abstract in a single, concise, and informative sentence. Do not start with 'This paper' or 'The authors'. Abstract: \"{paper.cleaned_summary}\""
+        prompt = f"Summarize the following academic abstract in a single, concise, and informative sentence. Abstract: \"{paper.cleaned_summary}\""
         try:
             summary = query_llm(prompt, model_name=LLM_MODEL, temperature=0.2, max_tokens=100)
             if summary:
@@ -648,18 +563,33 @@ class ArxivEngine(object):
 
     def _generate_tldrs_batch_llm(self, papers, batch_size=10):
         """
-        Generates TLDRs for a list of papers in batches using an LLM.
-        Includes a fallback to individual processing if a batch fails.
+        Generates TLDRs for a list of papers using an LLM. For cloud-based providers
+        (OpenAI, Gemini), it uses batch processing. For local providers (llama_cpp),
+        it processes papers individually to be more robust.
         """
-        print(f"Generating TLDRs for {len(papers)} papers in batches of {batch_size} using LLM...")
+        provider_label = "local LLM" if LLM_PROVIDER.lower() == 'llama_cpp' else LLM_PROVIDER
+        print(f"Generating TLDRs for {len(papers)} papers using {provider_label}...")
 
+        if LLM_PROVIDER.lower() == 'llama_cpp':
+            print("Processing papers individually for local LLM.")
+            for paper in tqdm(papers, desc="Generating TLDRs"):
+                summary = self._generate_tldr_llm_single(paper)
+                if summary:
+                    paper.tldr = summary + f" ({provider_label})"
+                else:
+                    # Fallback to sumy if LLM fails
+                    print(f"  [FALLBACK] LLM failed for {paper.arxiv_id}. Using 'sumy'.")
+                    paper.tldr = self._generate_tldr_sumy(paper.cleaned_summary) + " (sumy fallback)"
+            return
+
+        # Existing batch logic for cloud LLMs
+        print(f"Processing in batches of {batch_size}...")
         for i in tqdm(range(0, len(papers), batch_size), desc="Processing TLDR Batches"):
             batch = papers[i:i + batch_size]
             
             prompt_parts = [
-                "You are an expert academic assistant. Your task is to summarize multiple paper abstracts into a single, concise, and informative sentence for each.",
-                "Do not start with 'This paper' or 'The authors'.",
-                "Provide the output as a single JSON object, where each key is the paper's arXiv ID and the value is the one-sentence summary.",
+                "Your task is to summarize multiple paper abstracts.",
+                "Provide the output as a single JSON object where each key is the paper's arXiv ID and the value is its one-sentence summary.",
                 "Here are the papers to summarize:"
             ]
             
@@ -677,16 +607,20 @@ class ArxivEngine(object):
                 
                 # Batch call was successful, assign TLDRs
                 for paper in batch:
-                    paper.tldr = summaries.get(paper.arxiv_id, "TLDR generation failed for this paper.")
+                    summary_text = summaries.get(paper.arxiv_id, "TLDR generation failed for this paper.")
+                    if "failed" not in summary_text:
+                        paper.tldr = summary_text + f" ({provider_label})"
+                    else:
+                        paper.tldr = summary_text
 
             except Exception as e:
                 print(f"\n[WARNING] LLM batch TLDR generation failed for batch starting at index {i}: {e}. Falling back to individual processing for this batch.")
                 # Fallback to individual processing for this batch
                 for paper in batch:
-                    time.sleep(4) # To avoid hitting rate limits
+                    time.sleep(1) # To avoid hitting rate limits
                     single_summary = self._generate_tldr_llm_single(paper)
                     if single_summary:
-                        paper.tldr = single_summary
+                        paper.tldr = single_summary + f" ({provider_label} fallback)"
                     else:
                         # Second fallback to sumy
                         print(f"  [FALLBACK] Using 'sumy' for paper {paper.arxiv_id}.")
@@ -777,7 +711,7 @@ class ArxivEngine(object):
                 papers_to_show = papers_to_process
             else: # 'sumy' or other classic methods
                 for paper in tqdm(papers_to_process, desc="Generating TLDRs"):
-                    paper.tldr = self._generate_tldr_sumy(paper.cleaned_summary)
+                    paper.tldr = self._generate_tldr_sumy(paper.cleaned_summary) + " (sumy)"
                     papers_to_show.append(paper)
 
         print(f'\nIn total: {len(scored_papers)} entries, recommending top {len(papers_to_show)}\n')
@@ -874,7 +808,7 @@ class ArxivEngine(object):
                 papers_to_show = papers_to_process
             else:
                 for paper in tqdm(papers_to_process, desc="Generating TLDRs"):
-                    paper.tldr = self._generate_tldr_sumy(paper.cleaned_summary)
+                    paper.tldr = self._generate_tldr_sumy(paper.cleaned_summary) + " (sumy)"
                     papers_to_show.append(paper)
 
         print(f'\nIn total: {len(scored_papers)} entries, recommending top {len(papers_to_show)} papers\n')

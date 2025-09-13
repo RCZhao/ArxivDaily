@@ -10,6 +10,7 @@ import os
 from jinja2 import Environment, FileSystemLoader
 
 from arxiv_engine import ArxivEngine
+from arxiv_paper import ArxivPaper
 from analysis import generate_daily_plot, generate_score_distribution_plot
 from config import BASE, MAX_PAPERS_TO_SHOW, MIN_SCORE_THRESHOLD, AUTHOR_COLLAPSE_THRESHOLD, ANALYSIS_OUTPUT_DIR
 
