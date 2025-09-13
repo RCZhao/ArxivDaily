@@ -541,7 +541,7 @@ def generate_daily_plot(rec_embeddings, rec_labels, output_filename='daily_clust
     base_labels_np = np.array(base_labels)
 
     # Define markers for sub-clusters
-    MARKERS = ['o', 's', 'P', 'X', '*', 'D', 'v', '^', '< ', '>']
+    MARKERS = ['o', 's', 'P', 'X', '*', 'D', 'v', '^', '<', '>']
 
     # Build color and marker maps from the definitive list of all clusters
     primary_to_sub_keys = {}
