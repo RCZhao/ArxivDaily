@@ -1,0 +1,35 @@
+name: arxiv-daily-cpu
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  # CPU-only PyTorch
+  - pytorch-cpu>=2.6
+  # - torchvision-cpu
+  # - torchaudio-cpu
+  # Core scientific and ML packages managed by Conda
+  - numpy
+  - scikit-learn
+  - sentence-transformers
+  - matplotlib
+  - wordcloud
+  - umap-learn
+  - nltk
+  - tqdm
+  - jinja2
+  # Moved from pip to avoid dependency conflicts
+  - openai
+  - google-generativeai
+  # Other dependencies available on conda-forge
+  - feedparser
+  - requests
+  - beautifulsoup4
+  - pyzotero
+  - sumy
+  - arxiv
+  # llama-cpp-python can be installed via pip in a CPU-only environment
+  - pip:
+    - llama-cpp-python

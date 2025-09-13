@@ -1,0 +1,39 @@
+name: arxiv-daily
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  # C/C++ compilers for llama-cpp-python
+  - gcc<=11
+  - gxx<=11
+  # GPU-enabled PyTorch and CUDA toolkit
+  - cudatoolkit>=12 #=11.2.2
+  - cudnn>=12 #=8.1.0
+  - pytorch>=2.6
+  - torchvision
+  - torchaudio
+  # - nvidia::pytorch-cuda
+  # Core scientific and ML packages managed by Conda
+  - numpy
+  - scikit-learn
+  - sentence-transformers
+  - matplotlib
+  - wordcloud
+  - umap-learn
+  - nltk
+  - tqdm
+  - jinja2
+  # Moved from pip to avoid dependency conflicts
+  - openai
+  - google-generativeai
+  # Other dependencies available on conda-forge
+  - feedparser
+  - requests
+  - beautifulsoup4
+  - pyzotero
+  - sumy
+  - arxiv

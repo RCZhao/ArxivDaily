@@ -12,59 +12,120 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          ref: main   # 如果你的主分支不是 main，请改为你的主分支名
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
+      
+      - name: Setup Conda Environment
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          activate-environment: arxiv-daily-cpu
+          environment-file: environment.cpu.yml
+          auto-activate-base: false
+          use-mamba: true # Use mamba for faster environment solving
 
-      - name: Install dependencies
+      - name: Create Zotero config file
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          echo "[zotero]" > config.ini
+          echo "user_id = ${{ secrets.ZOTERO_USER_ID }}" >> config.ini
+          echo "api_key = ${{ secrets.ZOTERO_API_KEY }}" >> config.ini
+        env:
+          ZOTERO_USER_ID: ${{ secrets.ZOTERO_USER_ID }}
+          ZOTERO_API_KEY: ${{ secrets.ZOTERO_API_KEY }}
 
-      - name: Download NLTK data
+      - name: Create LLM config file
         run: |
-          python -m nltk.downloader punkt stopwords
-
-      - name: Check if favorite_arxiv_links.txt changed
-        id: fav_changed
-        run: |
-          if git diff --quiet origin/main -- favorite_arxiv_links.txt; then
-            echo "changed=false" >> $GITHUB_OUTPUT
+          if [ -n "${{ secrets.LLM_API_KEY }}" ]; then
+            echo "[llm]" >> config.ini
+            echo "api_key = ${{ secrets.LLM_API_KEY }}" >> config.ini
+            echo "" >> config.ini
+            echo "[features]" >> config.ini
+            echo "tldr_generator = llm" >> config.ini
+            echo "cluster_naming_method = llm" >> config.ini
+            echo "word_cloud_method = llm" >> config.ini
           else
-            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "LLM_API_KEY not found. Using classic features (sumy, tfidf)." 
           fi
+        env:
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+
+      - name: Cache arxiv_cache.pickle
+        id: cache-arxiv
+        uses: actions/cache@v4
+        with:
+          path: arxiv_cache.pickle
+          key: ${{ runner.os }}-arxiv-cache-${{ hashFiles('**/config.ini') }}
+          restore-keys: |
+            ${{ runner.os }}-arxiv-cache-
+
+      - name: Cache NLTK data
+        id: cache-nltk
+        uses: actions/cache@v4
+        with:
+          path: nltk_data
+          key: ${{ runner.os }}-nltk-data-v2 # Bump version to include stopwords
 
       - name: Update score files
-        if: steps.fav_changed.outputs.changed == 'true'
         run: |
-          python arxiv_rank.py update
-
-      - name: Generate daily HTML
+          python arxiv_engine.py update
+      - name: Generate daily or weekly HTML
         run: |
-          python arxiv_rank.py
+          # Run weekly review on Sundays (weekday 0 in UTC)
+          if [ $(date -u +%w) -eq 0 ]; then
+            echo "It's Sunday. Generating weekly review for the last 7 days."
+            python arxiv_rank.py --days 7
+          else
+            echo "It's a weekday. Generating daily report."
+            python arxiv_rank.py
+          fi
 
       - name: Copy and move HTML files
         run: |
           today=$(date +%Y%m%d)
-          cp $today.html index.html
-          mv $today.html arxiv_history/
+          # Check if it's Sunday (0 is Sunday for `date +%w` in UTC)
+          if [ $(date -u +%w) -eq 0 ]; then
+            # It's Sunday, look for the backfill file which serves as the weekly review
+            backfill_file="backfill_$today.html"
+            if [ -f "$backfill_file" ]; then
+              echo "Found weekly (backfill) file: $backfill_file"
+              # Rename to a more descriptive weekly name for history
+              weekly_history_file="weekly_$today.html"
+              mv "$backfill_file" "$weekly_history_file"
+              cp "$weekly_history_file" index.html
+              mv "$weekly_history_file" arxiv_history/
+            else
+              echo "Weekly (backfill) file $backfill_file not found, but it is Sunday."
+            fi
+          else
+            # It's a weekday, look for the daily file
+            daily_file="$today.html"
+            if [ -f "$daily_file" ]; then
+              echo "Found daily file: $daily_file"
+              cp "$daily_file" index.html
+              mv "$daily_file" arxiv_history/
+            else
+              echo "Daily file $daily_file not found."
+            fi
+          fi
 
-      - name: Commit and push changes to main
+      - name: Commit and push changes
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add favorite_arxiv_links.txt author.pickle title_abstract.pickle index.html arxiv_history/
+          git add index.html arxiv_history/ analysis_results/
           git commit -m "Auto update arxiv daily results [skip ci]" || echo "Nothing to commit"
-          git pull --rebase origin main
-          git push origin main
+          # Use github.ref_name to get the current branch name (e.g., 'main' or 'dev')
+          # This makes the push command dynamic and avoids conflicts.
+          CURRENT_BRANCH=${{ github.ref_name }}
+          git pull --rebase origin $CURRENT_BRANCH
+          git push origin $CURRENT_BRANCH
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Deploy to GitHub Pages
+        # if: github.ref == 'refs/heads/main' # Only deploy when on the main branch
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
