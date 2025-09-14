@@ -13,11 +13,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-      
       - name: Setup Conda Environment
         uses: conda-incubator/setup-miniconda@v3
         with:
@@ -70,6 +65,7 @@ jobs:
       - name: Update score files
         run: |
           python arxiv_engine.py update
+        shell: bash -l {0}
       - name: Generate daily or weekly HTML
         run: |
           # Run weekly review on Sundays (weekday 0 in UTC)
@@ -80,6 +76,7 @@ jobs:
             echo "It's a weekday. Generating daily report."
             python arxiv_rank.py
           fi
+        shell: bash -l {0}
 
       - name: Copy and move HTML files
         run: |
@@ -109,6 +106,7 @@ jobs:
               echo "Daily file $daily_file not found."
             fi
           fi
+        shell: bash -l {0}
 
       - name: Commit and push changes
         run: |
@@ -121,6 +119,7 @@ jobs:
           CURRENT_BRANCH=${{ github.ref_name }}
           git pull --rebase origin $CURRENT_BRANCH
           git push origin $CURRENT_BRANCH
+        shell: bash -l {0}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
