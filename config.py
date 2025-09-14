@@ -14,6 +14,17 @@ NLTK_DATA_PATH = os.path.join(BASE, 'nltk_data')
 # --- Analysis Configuration ---
 ANALYSIS_OUTPUT_DIR = os.path.join(BASE, 'analysis_results')
 
+# --- Default Prompts ---
+DEFAULT_LLM_SYSTEM_PROMPT = """You are a top-tier research scientist and expert academic assistant, specializing in the rapid analysis and synthesis of scientific literature, with particular expertise in papers from astrophysics, physics, computer science, and statistics.
+
+Your core tasks are as follows:
+1.  **Generate Single-Sentence Summaries (TLDR)**: Based on a paper's title and abstract, produce a single, highly condensed, and information-rich summary. This summary must accurately capture the core findings or main contributions of the paper. **Crucially, do NOT start the summary with phrases like "This paper", "The paper", or "The authors". Dive directly into the substance of the findings.**
+2.  **Extract Keywords**: From a large corpus of papers, identify the most important and frequently occurring technical keywords and core concepts.
+3.  **Name Paper Clusters**: For a group of thematically similar papers, generate a short, descriptive name (2-4 keywords or phrases) that accurately summarizes their common theme.
+
+In all tasks, your responses must be precise, objective, and strictly adhere to the specified output format (e.g., a single sentence, a JSON object, or a comma-separated list). Your role is to act as a tool for expert researchers, so your language style should be professional, technical, and concise."""
+
+
 # --- Load settings from config.ini ---
 config = configparser.ConfigParser()
 # Provide default values for all configurable settings. This makes the script
@@ -44,9 +55,10 @@ default_config = {
     }
     ,
     'llm': {
-        'provider': 'gemini', # or 'openai'
+        'provider': 'gemini', # or 'openai', 'llama_cpp'
         'api_key': 'YOUR_API_KEY',
-        'model': 'gemini-1.5-flash-latest' # or a model like 'gpt-4o-mini'
+        'model': 'gemini-1.5-flash-latest', # or a model like 'gpt-4o-mini',
+        'model_path': ''
     },
     'features': {
         'tldr_generator': 'sumy',
@@ -60,6 +72,9 @@ default_config = {
         'first_author_boost': '1.5'
     }
 }
+# Set the default system prompt separately to keep the main config dict clean
+default_config['llm']['system_prompt'] = DEFAULT_LLM_SYSTEM_PROMPT
+
 config.read_dict(default_config)
 
 if os.path.exists(CONFIG_FILE):
@@ -80,6 +95,10 @@ ARXIV_CATEGORIES = [line.strip() for line in arxiv_categories_str.strip().split(
 LLM_PROVIDER = config.get('llm', 'provider')
 LLM_API_KEY = config.get('llm', 'api_key')
 LLM_MODEL = config.get('llm', 'model')
+LLM_MODEL_PATH = config.get('llm', 'model_path', fallback=None)
+# The system prompt is now set by default in this file.
+# It can be overridden by config.ini or the LLM_SYSTEM_PROMPT environment variable.
+LLM_SYSTEM_PROMPT = os.getenv('LLM_SYSTEM_PROMPT', config.get('llm', 'system_prompt'))
 
 TLDR_GENERATOR = config.get('features', 'tldr_generator')
 CLUSTER_NAMING_METHOD = config.get('features', 'cluster_naming_method')

@@ -49,19 +49,28 @@ arxiv_categories =
 # (Optional) Configure a Large Language Model (LLM) for advanced features.
 # If an api_key is provided, the GitHub Actions workflow will automatically
 # enable all LLM features.
-# Supported providers: 'gemini', 'openai'
+# Supported providers: 'gemini', 'openai', 'llama_cpp'
 provider = gemini
+
+# For 'gemini' or 'openai'
 api_key = YOUR_API_KEY
 # Model to use for all LLM tasks.
 # For Gemini, use a model like 'gemini-1.5-flash-latest'.
 # For OpenAI, use a model like 'gpt-4o-mini'.
 model = gemini-1.5-flash-latest
 
+# For 'llama_cpp'
+# The path to your local GGUF model file.
+model_path = /mnt/j/Pretrained_Models/qwen2-7b-instruct-q4_k_m.gguf
+# The system prompt to guide the model's behavior. The default is now set
+# in config.py and can be overridden here if needed.
+system_prompt =
+
 [features]
 # Choose the method for generating TLDRs, cluster names, and word clouds.
 # Options: 'sumy' or 'llm' for TLDRs.
 # Options: 'tfidf' or 'llm' for cluster naming and word clouds.
-# To use LLM features, you must provide an API key in the [llm] section.
+# To use LLM features, you must configure a provider in the [llm] section.
 tldr_generator = sumy
 cluster_naming_method = tfidf
 word_cloud_method = tfidf

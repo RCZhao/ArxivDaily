@@ -14,6 +14,7 @@ Example:
 import os
 import sys
 import pickle
+import textwrap
 import warnings
 import numpy as np
 import matplotlib.pyplot as plt
@@ -27,10 +28,11 @@ from wordcloud import WordCloud
 # Add the project root to the path to allow importing arxiv_engine
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from config import (
-    BASE, CACHE_FILE, ANALYSIS_OUTPUT_DIR, CLUSTER_NAMING_METHOD, WORD_CLOUD_METHOD,
+    BASE, CACHE_FILE, ANALYSIS_OUTPUT_DIR, CLUSTER_NAMING_METHOD, WORD_CLOUD_METHOD, LLM_PROVIDER,
     LLM_MODEL
 )
 from llm_utils import query_llm
+from arxiv_paper import ArxivPaper
 
 # --- Constants ---
 # Define custom stopwords to be used by both TF-IDF and WordCloud for consistency.
@@ -161,7 +163,7 @@ def get_cluster_names_tfidf(papers, labels, n_clusters):
     print("Generated names:", cluster_names)
     return cluster_names
 
-def plot_clusters(reduced_embeddings, hierarchical_labels, n_clusters, hierarchical_cluster_names):
+def plot_clusters(reduced_embeddings, hierarchical_labels, n_clusters, hierarchical_cluster_names, naming_method='tfidf'):
     """
     Generates and saves a 2D scatter plot of the paper clusters, showing sub-clusters.
 
@@ -170,9 +172,10 @@ def plot_clusters(reduced_embeddings, hierarchical_labels, n_clusters, hierarchi
         hierarchical_labels (list[tuple]): Hierarchical cluster label (p_id, s_id) for each paper.
         n_clusters (int): The number of primary clusters.
         hierarchical_cluster_names (dict): A dict mapping (p_id, s_id) to a name.
+        naming_method (str): The method used for cluster naming ('tfidf' or 'llm').
     """
     print("Generating hierarchical cluster plot with sub-cluster coloring...")
-    plt.figure(figsize=(18, 14))  # Increased size for better legend
+    plt.figure(figsize=(22, 18))  # Increased size for larger fonts and legend
 
     labels_np = np.array(hierarchical_labels)
     primary_labels = labels_np[:, 0]
@@ -205,7 +208,7 @@ def plot_clusters(reduced_embeddings, hierarchical_labels, n_clusters, hierarchi
                 reduced_embeddings[mask, 0],
                 reduced_embeddings[mask, 1],
                 color=color,
-                s=60,
+                s=120,  # Increased point size
                 alpha=0.8
             )
             
@@ -213,20 +216,22 @@ def plot_clusters(reduced_embeddings, hierarchical_labels, n_clusters, hierarchi
             cluster_key = (p_id, s_id)
             cluster_name = hierarchical_cluster_names.get(cluster_key)
             if cluster_name:
+                wrapped_name = '\n'.join(textwrap.wrap(cluster_name, width=30))
                 legend_handles.append(
-                    plt.Line2D([0], [0], marker='o', color='w', label=cluster_name,
-                               markerfacecolor=color, markersize=10)
+                    plt.Line2D([0], [0], marker='o', color='w', label=wrapped_name,
+                               markerfacecolor=color, markersize=15)
                 )
 
-    plt.title(f'UMAP Projection of Favorite Papers ({n_clusters} Primary Clusters)', fontsize=20)
-    plt.xlabel('UMAP Dimension 1', fontsize=14)
-    plt.ylabel('UMAP Dimension 2', fontsize=14)
+    method_label = f"{LLM_PROVIDER}" if naming_method == 'llm' else 'TF-IDF'
+    plt.title(f'UMAP Projection of Favorite Papers ({n_clusters} Primary Clusters, Named by {method_label})', fontsize=24)
+    plt.xlabel('UMAP Dimension 1', fontsize=18)
+    plt.ylabel('UMAP Dimension 2', fontsize=18)
     plt.grid(True, linestyle='--', alpha=0.6)
     
     if legend_handles:
         # Sort legend handles to group by primary cluster
         legend_handles.sort(key=lambda h: h.get_label())
-        plt.legend(handles=legend_handles, loc='best', title="Interest Clusters", fontsize=10, title_fontsize=12)
+        plt.legend(handles=legend_handles, loc='best', title="Interest Clusters", fontsize=14, title_fontsize=16)
 
     if not os.path.exists(ANALYSIS_OUTPUT_DIR):
         os.makedirs(ANALYSIS_OUTPUT_DIR)
@@ -273,13 +278,13 @@ def generate_word_cloud_llm(papers):
         stopwords=stopwords, collocations=False, colormap='viridis'
     ).generate_from_frequencies(frequencies)
 
-    plt.figure(figsize=(16, 10)); plt.title('Favorite Papers Word Cloud (LLM-Generated)', fontsize=20)
+    plt.figure(figsize=(20, 12)); plt.title(f'Favorite Papers Word Cloud (Keywords by {LLM_PROVIDER})', fontsize=24)
     plt.imshow(wordcloud, interpolation='bilinear'); plt.axis('off')
     
     wordcloud_path = os.path.join(ANALYSIS_OUTPUT_DIR, 'word_cloud.png')
     if not os.path.exists(ANALYSIS_OUTPUT_DIR): os.makedirs(ANALYSIS_OUTPUT_DIR)
     plt.savefig(wordcloud_path, dpi=150, bbox_inches='tight'); plt.close()
-    print(f"Word cloud (LLM) saved to: {wordcloud_path}")
+    print(f"Word cloud (Keywords by {LLM_PROVIDER}) saved to: {wordcloud_path}")
     return wordcloud_path
 
 def generate_word_cloud_tfidf(papers):
@@ -300,8 +305,8 @@ def generate_word_cloud_tfidf(papers):
         stopwords=stopwords, collocations=False, colormap='viridis'
     ).generate(text)
 
-    plt.figure(figsize=(16, 10))
-    plt.title('Favorite Papers Word Cloud', fontsize=20)
+    plt.figure(figsize=(20, 12))
+    plt.title('Favorite Papers Word Cloud (Keywords by TF-IDF)', fontsize=24)
     plt.imshow(wordcloud, interpolation='bilinear')
     plt.axis('off')
     
@@ -311,7 +316,7 @@ def generate_word_cloud_tfidf(papers):
     wordcloud_path = os.path.join(ANALYSIS_OUTPUT_DIR, 'word_cloud.png')
     plt.savefig(wordcloud_path, dpi=150, bbox_inches='tight')
     plt.close()
-    print(f"Word cloud saved to: {wordcloud_path}")
+    print(f"Word cloud (Keywords by TF-IDF) saved to: {wordcloud_path}")
     return wordcloud_path
 
 def generate_score_distribution_plot(all_scored_papers, min_score_threshold):
@@ -331,16 +336,16 @@ def generate_score_distribution_plot(all_scored_papers, min_score_threshold):
     scores = [paper.score for paper in all_scored_papers]
     
     print("Generating score distribution plot...")
-    plt.figure(figsize=(12, 7))
+    plt.figure(figsize=(14, 8))
     plt.hist(scores, bins=50, color='skyblue', edgecolor='black', alpha=0.7, label=f'All {len(scores)} Papers')
     
     plt.axvline(min_score_threshold, color='r', linestyle='--', linewidth=2, 
                 label=f'Min Score Threshold: {min_score_threshold:.1f}')
     
-    plt.xlabel('Recommendation Score', fontsize=14)
-    plt.ylabel('Number of Papers', fontsize=14)
-    plt.title('Distribution of Daily Paper Scores', fontsize=16)
-    plt.legend(fontsize=12)
+    plt.xlabel('Recommendation Score', fontsize=18)
+    plt.ylabel('Number of Papers', fontsize=18)
+    plt.title('Distribution of Daily Paper Scores', fontsize=20)
+    plt.legend(fontsize=14)
     plt.grid(True, linestyle='--', alpha=0.6)
     plt.yscale('log')
     plt.tight_layout()
@@ -477,7 +482,7 @@ def run_analysis(papers, embeddings, n_clusters=None):
             warnings.filterwarnings("ignore", category=UserWarning, module="umap")
             reducer = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.1, n_components=2, random_state=42)
             reduced_embeddings = reducer.fit_transform(embeddings)
-            plot_path = plot_clusters(reduced_embeddings, hierarchical_labels, n_clusters, hierarchical_cluster_names)
+            plot_path = plot_clusters(reduced_embeddings, hierarchical_labels, n_clusters, hierarchical_cluster_names, naming_method=CLUSTER_NAMING_METHOD)
     else:
         print("\n--- Not enough papers to perform dimensionality reduction. Skipping cluster plot. ---")
 
@@ -522,6 +527,7 @@ def generate_daily_plot(rec_embeddings, rec_labels, output_filename='daily_clust
         base_embeddings_2d = cached_data.get('umap_embeddings_2d')
         base_labels = cached_data.get('cluster_labels')
         cluster_names = cached_data.get('cluster_names')
+        naming_method = cached_data.get('cluster_naming_method', 'tfidf') # Default to tfidf for old caches
         
         if reducer is None or base_embeddings_2d is None or base_labels is None or cluster_names is None:
             print("Cache is missing necessary UMAP/cluster data. Run 'arxiv_engine.py update' to generate it.")
@@ -531,11 +537,11 @@ def generate_daily_plot(rec_embeddings, rec_labels, output_filename='daily_clust
         return None
 
     # --- Plotting Setup ---
-    plt.figure(figsize=(18, 14))
+    plt.figure(figsize=(22, 18))
     base_labels_np = np.array(base_labels)
 
     # Define markers for sub-clusters
-    MARKERS = ['o', 's', 'P', 'X', '*', 'D', 'v', '^', '< ', '>']
+    MARKERS = ['o', 's', 'P', 'X', '*', 'D', 'v', '^', '<', '>']
 
     # Build color and marker maps from the definitive list of all clusters
     primary_to_sub_keys = {}
@@ -576,7 +582,7 @@ def generate_daily_plot(rec_embeddings, rec_labels, output_filename='daily_clust
             base_embeddings_2d[mask, 0], base_embeddings_2d[mask, 1],
             c=[color_map.get((p_id, s_id), 'lightgrey')],
             marker=marker_map.get((p_id, s_id), 'o'),
-            s=60, 
+            s=120, 
             alpha=0.5,  # Increased alpha as requested
             label=name
         )
@@ -595,17 +601,19 @@ def generate_daily_plot(rec_embeddings, rec_labels, output_filename='daily_clust
             marker=marker,
             facecolors='none',
             edgecolors=[color],
-            s=400,
-            linewidth=2.5,
+            s=600,
+            linewidth=3,
             zorder=10
         )
         # Annotate with rank
         plt.text(pos[0], pos[1], str(i), color='black',
-                 fontsize=10, weight='bold', zorder=12, ha='center', va='center')
+                 fontsize=12, weight='bold', zorder=12, ha='center', va='center')
 
-    plt.title(title, fontsize=20)
-    plt.xlabel('UMAP Dimension 1', fontsize=14)
-    plt.ylabel('UMAP Dimension 2', fontsize=14)
+    base_title = title
+    method_label = f"{LLM_PROVIDER}" if naming_method == 'llm' else 'TF-IDF'
+    plt.title(f"{base_title}\n(Base map clusters named by {method_label})", fontsize=24)
+    plt.xlabel('UMAP Dimension 1', fontsize=18)
+    plt.ylabel('UMAP Dimension 2', fontsize=18)
     plt.grid(True, linestyle='--', alpha=0.6)
     
     # --- 3. Create a comprehensive legend ---
@@ -615,17 +623,18 @@ def generate_daily_plot(rec_embeddings, rec_labels, output_filename='daily_clust
         name = cluster_names[key]
         color = color_map.get(key)
         marker = marker_map.get(key, 'o')
+        wrapped_name = '\n'.join(textwrap.wrap(name, width=30))
         if name and color is not None:
              legend_handles.append(
-                plt.Line2D([0], [0], marker=marker, color='w', label=name,
-                           markerfacecolor=color, markersize=12)
+                plt.Line2D([0], [0], marker=marker, color='w', label=wrapped_name,
+                           markerfacecolor=color, markersize=15)
             )
 
     rec_handle = plt.Line2D([0], [0], marker='o', color='w', label="Today's Recommendation (hollow)",
-                            markerfacecolor='none', markeredgecolor='grey', markeredgewidth=2, markersize=12)
+                            markerfacecolor='none', markeredgecolor='grey', markeredgewidth=2, markersize=15)
     legend_handles.append(rec_handle)
 
-    plt.legend(handles=legend_handles, loc='best', title="Interest Clusters", fontsize=10, title_fontsize=12)
+    plt.legend(handles=legend_handles, loc='best', title="Interest Clusters", fontsize=14, title_fontsize=16)
 
     # Save plot
     if not os.path.exists(ANALYSIS_OUTPUT_DIR):
