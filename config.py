@@ -57,7 +57,7 @@ default_config = {
     'llm': {
         'provider': 'gemini', # or 'openai', 'llama_cpp'
         'api_key': 'YOUR_API_KEY',
-        'model': 'gemini-1.5-flash-latest', # or a model like 'gpt-4o-mini',
+        'model': 'gemini-flash-latest', # or a model like 'gpt-4o-mini',
         'model_path': ''
     },
     'features': {
