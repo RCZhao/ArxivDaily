@@ -3,6 +3,8 @@ Utility functions for interacting with Large Language Models (LLMs).
 """
 import os
 import json
+import time
+from functools import wraps
 import google.generativeai as genai
 from openai import OpenAI
 from llama_cpp import Llama
@@ -12,6 +14,23 @@ from config import (
 
 # Global variable to cache the loaded llama_cpp model
 _llama_cpp_model = None
+
+# Rate limiting for Gemini API (free tier: 10 requests per minute)
+_last_gemini_call_time = 0
+_GEMINI_MIN_INTERVAL = 6.5  # Seconds between calls (slightly more than 60/10 to be safe)
+
+def _rate_limit_gemini():
+    """Ensures minimum interval between Gemini API calls to avoid rate limits."""
+    global _last_gemini_call_time
+    current_time = time.time()
+    time_since_last_call = current_time - _last_gemini_call_time
+    
+    if time_since_last_call < _GEMINI_MIN_INTERVAL:
+        sleep_time = _GEMINI_MIN_INTERVAL - time_since_last_call
+        print(f"Rate limiting: Sleeping for {sleep_time:.1f}s to avoid Gemini quota...")
+        time.sleep(sleep_time)
+    
+    _last_gemini_call_time = time.time()
 
 def _get_llama_cpp_model():
     """Loads and caches the llama_cpp model."""
@@ -95,7 +114,19 @@ def query_llm(prompt, model_name, temperature=0.2, max_tokens=150, is_json=False
             return None
     elif provider == 'gemini':
         try:
+            # Apply rate limiting before API call
+            _rate_limit_gemini()
+            
             genai.configure(api_key=api_key)
+            
+            # Configure safety settings to reduce false positives for academic content
+            safety_settings = [
+                {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_ONLY_HIGH"},
+                {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_ONLY_HIGH"},
+                {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_ONLY_HIGH"},
+                {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_ONLY_HIGH"},
+            ]
+            
             generation_config = {
                 "temperature": temperature,
                 "max_output_tokens": max_tokens,
@@ -104,10 +135,52 @@ def query_llm(prompt, model_name, temperature=0.2, max_tokens=150, is_json=False
                 generation_config["response_mime_type"] = "application/json"
             
             system_instruction = LLM_SYSTEM_PROMPT if LLM_SYSTEM_PROMPT else None
-            model = genai.GenerativeModel(model_name, system_instruction=system_instruction)
+            model = genai.GenerativeModel(
+                model_name, 
+                system_instruction=system_instruction,
+                safety_settings=safety_settings
+            )
+            
             response = model.generate_content(prompt, generation_config=generation_config)
+            
+            # Check if response was blocked by safety filters
+            if not response.candidates:
+                print(f"Warning: Gemini returned no candidates. Content may have been blocked by safety filters.")
+                return None
+            
+            candidate = response.candidates[0]
+            
+            # Check finish_reason
+            # 0: FINISH_REASON_UNSPECIFIED, 1: STOP (normal), 2: SAFETY, 3: RECITATION, 4: OTHER, 5: MAX_TOKENS
+            if candidate.finish_reason == 2:  # SAFETY
+                print(f"Warning: Gemini blocked response due to safety concerns.")
+                if hasattr(candidate, 'safety_ratings'):
+                    print(f"Safety ratings: {candidate.safety_ratings}")
+                return None
+            elif candidate.finish_reason == 3:  # RECITATION
+                print(f"Warning: Gemini blocked response due to recitation concerns.")
+                return None
+            elif candidate.finish_reason not in [0, 1]:  # Not normal completion
+                print(f"Warning: Gemini finished with unexpected reason: {candidate.finish_reason}")
+            
+            # Check if content exists
+            if not candidate.content or not candidate.content.parts:
+                print(f"Warning: Gemini response has no content parts.")
+                return None
+            
             content = response.text
-            return json.loads(content) if is_json else content.strip()
+            
+            # Parse JSON with better error handling
+            if is_json:
+                try:
+                    return json.loads(content)
+                except json.JSONDecodeError as je:
+                    print(f"Warning: Failed to parse Gemini JSON response: {je}")
+                    print(f"Raw content (first 500 chars): {content[:500]}")
+                    return None
+            else:
+                return content.strip()
+                
         except Exception as e:
             print(f"Error querying Gemini: {e}")
             return None
