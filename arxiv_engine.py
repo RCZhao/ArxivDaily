@@ -553,7 +553,7 @@ class ArxivEngine(object):
         """Generates a TLDR for a single paper using an LLM."""
         prompt = f"Summarize the following academic abstract in a single, concise, and informative sentence. Abstract: \"{paper.cleaned_summary}\""
         try:
-            summary = query_llm(prompt, model_name=LLM_MODEL, temperature=0.2, max_tokens=100)
+            summary = query_llm(prompt, model_name=LLM_MODEL, temperature=0.2, max_tokens=8192)
             if summary:
                 return summary
             return None # Indicate failure
@@ -601,7 +601,7 @@ class ArxivEngine(object):
             prompt = "\n".join(prompt_parts)
             
             try:
-                summaries = query_llm(prompt, model_name=LLM_MODEL, temperature=0.2, max_tokens=2000, is_json=True)
+                summaries = query_llm(prompt, model_name=LLM_MODEL, temperature=0.2, max_tokens=8192, is_json=True)
                 if not (summaries and isinstance(summaries, dict)):
                     raise ValueError("LLM did not return a valid JSON dictionary.")
                 

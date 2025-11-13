@@ -50,7 +50,7 @@ def _get_llama_cpp_model():
         print("Local LLM loaded successfully.")
     return _llama_cpp_model
 
-def query_llm(prompt, model_name, temperature=0.2, max_tokens=150, is_json=False):
+def query_llm(prompt, model_name, temperature=0.2, max_tokens=8192, is_json=False):
     """
     Queries a configured LLM provider and returns the response.
 
@@ -143,25 +143,29 @@ def query_llm(prompt, model_name, temperature=0.2, max_tokens=150, is_json=False
             
             response = model.generate_content(prompt, generation_config=generation_config)
             
-            # Check if response was blocked by safety filters
+            # Check if response was blocked
             if not response.candidates:
-                print(f"Warning: Gemini returned no candidates. Content may have been blocked by safety filters.")
+                print(f"Warning: Gemini returned no candidates. Response may have been blocked.")
                 return None
             
             candidate = response.candidates[0]
             
             # Check finish_reason
-            # 0: FINISH_REASON_UNSPECIFIED, 1: STOP (normal), 2: SAFETY, 3: RECITATION, 4: OTHER, 5: MAX_TOKENS
-            if candidate.finish_reason == 2:  # SAFETY
-                print(f"Warning: Gemini blocked response due to safety concerns.")
+            # 0: UNSPECIFIED, 1: STOP (normal), 2: MAX_TOKENS, 3: SAFETY, 4: RECITATION, 5: LANGUAGE, 6: OTHER...
+            if candidate.finish_reason == 2:  # MAX_TOKENS
+                print(f"Warning: Gemini hit max_tokens limit ({max_tokens}). Response truncated.")
+                # For some tasks (like summaries), truncated response might still be usable
+                # For JSON tasks, this will likely fail parsing
+            elif candidate.finish_reason == 3:  # SAFETY
+                print(f"Warning: Gemini blocked response due to safety filters.")
                 if hasattr(candidate, 'safety_ratings'):
                     print(f"Safety ratings: {candidate.safety_ratings}")
                 return None
-            elif candidate.finish_reason == 3:  # RECITATION
+            elif candidate.finish_reason == 4:  # RECITATION
                 print(f"Warning: Gemini blocked response due to recitation concerns.")
                 return None
-            elif candidate.finish_reason not in [0, 1]:  # Not normal completion
-                print(f"Warning: Gemini finished with unexpected reason: {candidate.finish_reason}")
+            elif candidate.finish_reason not in [0, 1, 2]:  # Not normal or max_tokens
+                print(f"Warning: Gemini stopped with reason code {candidate.finish_reason}")
             
             # Check if content exists
             if not candidate.content or not candidate.content.parts:

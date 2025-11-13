@@ -121,7 +121,7 @@ def get_cluster_names_llm(papers, labels, n_clusters):
             "Example: 'dark matter, simulation, halos'.\n\n"
             f"--- PAPERS ---\n{text_for_prompt}"
         )
-        name = query_llm(prompt, model_name=LLM_MODEL, temperature=0.1, max_tokens=20)
+        name = query_llm(prompt, model_name=LLM_MODEL, temperature=0.1, max_tokens=8192)
         if name:
             cluster_names.append(name.strip().replace('"', ''))
         else:
@@ -276,7 +276,7 @@ def generate_word_cloud_llm(papers):
         f"--- ABSTRACTS ---\n{text_for_prompt}"
     )
 
-    frequencies = query_llm(prompt, model_name=LLM_MODEL, temperature=0.1, max_tokens=1000, is_json=True)
+    frequencies = query_llm(prompt, model_name=LLM_MODEL, temperature=0.1, max_tokens=8192, is_json=True)
     if not frequencies or not isinstance(frequencies, dict):
         print("Error: LLM did not return a valid JSON dictionary for word cloud.")
         return None
