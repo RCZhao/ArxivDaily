@@ -92,9 +92,10 @@ def get_cluster_names(papers, labels, n_clusters):
     """
     if CLUSTER_NAMING_METHOD == 'llm' and n_clusters > 1:
         names = get_cluster_names_llm(papers, labels, n_clusters)
-        if names:  # Fallback if LLM fails
+        # Check if LLM actually generated meaningful names (not just default "Cluster X")
+        if names and not all(name.startswith('Cluster ') for name in names):
             return names
-        print("Warning: LLM cluster naming failed. Falling back to TF-IDF method.")
+        print("Warning: LLM cluster naming failed or returned only default names. Falling back to TF-IDF method.")
 
     return get_cluster_names_tfidf(papers, labels, n_clusters)
 
@@ -106,6 +107,7 @@ def get_cluster_names_llm(papers, labels, n_clusters):
         cluster_texts[labels[i]] += f"Title: {paper['title']}\nAbstract: {paper['abstract'][:500]}...\n\n"
 
     cluster_names = []
+    failed_count = 0
     for i in range(n_clusters):
         if not cluster_texts[i]:
             cluster_names.append(f"Cluster {i} (empty)")
@@ -120,8 +122,15 @@ def get_cluster_names_llm(papers, labels, n_clusters):
             f"--- PAPERS ---\n{text_for_prompt}"
         )
         name = query_llm(prompt, model_name=LLM_MODEL, temperature=0.1, max_tokens=20)
-        cluster_names.append(name.strip().replace('"', '') if name else f"Cluster {i}")
+        if name:
+            cluster_names.append(name.strip().replace('"', ''))
+        else:
+            cluster_names.append(f"Cluster {i}")
+            failed_count += 1
+    
     print("Generated names (LLM):", cluster_names)
+    if failed_count > 0:
+        print(f"Warning: {failed_count}/{n_clusters} cluster names failed to generate from LLM.")
     return cluster_names
 
 def get_cluster_names_tfidf(papers, labels, n_clusters):
