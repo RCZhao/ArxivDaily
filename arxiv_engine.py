@@ -13,6 +13,7 @@ import re
 import argparse
 import feedparser
 import arxiv
+import requests
 
 import torch
 import numpy as np
@@ -626,6 +627,78 @@ class ArxivEngine(object):
                         print(f"  [FALLBACK] Using 'sumy' for paper {paper.arxiv_id}.")
                         paper.tldr = self._generate_tldr_sumy(paper.cleaned_summary) + " (sumy fallback)"
 
+    def _fetch_paper_details(self, paper_ids):
+        """Fetch complete daily metadata with bounded requests and retries."""
+        # RSS feeds can repeat IDs across categories. Fetch each paper once.
+        paper_ids = list(dict.fromkeys(paper_ids))
+        if not paper_ids:
+            return []
+
+        batch_size = 100
+        max_retries = 3
+        # Reuse the client so its request spacing also applies between batches.
+        # Retries are controlled here to avoid multiplying retry budgets.
+        client = arxiv.Client(page_size=batch_size, delay_seconds=10, num_retries=0)
+        batch_count = (len(paper_ids) + batch_size - 1) // batch_size
+        all_results = []
+
+        for start in range(0, len(paper_ids), batch_size):
+            batch_ids = paper_ids[start:start + batch_size]
+            batch_number = start // batch_size + 1
+            search = arxiv.Search(
+                id_list=batch_ids,
+                max_results=len(batch_ids),
+                sort_by=arxiv.SortCriterion.SubmittedDate,
+            )
+            print(f"Fetching detail batch {batch_number}/{batch_count} ({len(batch_ids)} IDs).")
+
+            for attempt in range(max_retries + 1):
+                try:
+                    # Buffer the entire batch: a failed iteration must not append
+                    # partial results that would be duplicated on the next try.
+                    batch_results = list(tqdm(
+                        client.results(search), total=len(batch_ids),
+                        desc=f"Fetching details {batch_number}/{batch_count}", leave=False,
+                    ))
+                    break
+                except (arxiv.HTTPError, requests.exceptions.ConnectionError) as exc:
+                    if isinstance(exc, arxiv.HTTPError):
+                        retryable = exc.status == 429 or 500 <= exc.status < 600
+                        reason = f"HTTP {exc.status}"
+                    else:
+                        retryable = True
+                        reason = "connection error"
+
+                    if not retryable or attempt == max_retries:
+                        print(f"Detail batch {batch_number}/{batch_count} failed: {reason}.")
+                        raise
+
+                    wait_seconds = 30 * (2 ** attempt)
+                    print(
+                        f"Detail batch {batch_number}/{batch_count}: {reason}; "
+                        f"retry {attempt + 1}/{max_retries} in {wait_seconds}s."
+                    )
+                    time.sleep(wait_seconds)
+
+            returned_ids = [re.sub(r"v\d+$", "", result.get_short_id()) for result in batch_results]
+            expected_ids = set(batch_ids)
+            actual_ids = set(returned_ids)
+            if len(returned_ids) != len(batch_ids) or actual_ids != expected_ids:
+                raise RuntimeError(
+                    f"Incomplete arXiv detail batch {batch_number}/{batch_count}: "
+                    f"expected {len(batch_ids)} papers, got {len(returned_ids)}; "
+                    f"missing={sorted(expected_ids - actual_ids)}, "
+                    f"unexpected={sorted(actual_ids - expected_ids)}."
+                )
+
+            all_results.extend(batch_results)
+            print(f"Fetched {len(all_results)}/{len(paper_ids)} paper details.")
+
+        # Each batch is sorted separately by the API. Restore the original
+        # global submission-date order before scoring and selecting papers.
+        all_results.sort(key=lambda result: result.published, reverse=True)
+        return [ArxivPaper(result) for result in all_results]
+
     def get_recommendations(self, max_papers, min_score, algorithm='z_score'):
         """Fetches the latest daily papers using the arXiv RSS feed, scores them, and returns a sorted list.
 
@@ -682,13 +755,7 @@ class ArxivEngine(object):
 
         # --- Step 2: Fetch full paper details using the arxiv library in batches ---
         print(f"Found {len(paper_ids)} new papers. Fetching full details...")
-        client = arxiv.Client(page_size=100, delay_seconds=10, num_retries=5)
-        
-        # The arxiv library can handle a large id_list and will paginate internally.
-        search = arxiv.Search(id_list=paper_ids, sort_by=arxiv.SortCriterion.SubmittedDate)
-        
-        # Create ArxivPaper objects from the fetched results
-        papers_to_score = [ArxivPaper(result) for result in tqdm(client.results(search), total=len(paper_ids), desc="Fetching details")]
+        papers_to_score = self._fetch_paper_details(paper_ids)
 
         # --- Step 3: Score the fetched papers ---
         scored_papers = self._score_papers_batch(papers_to_score, algorithm=algorithm)
