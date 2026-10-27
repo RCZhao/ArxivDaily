@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>arXiv Daily: Backfill (2026-10-18 to 2026-10-25)</title>
+    <title>arXiv Daily: 2026-10-27</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Roboto:400,700&display=swap" rel="stylesheet">
     <style>
@@ -87,7 +87,7 @@
                 <div class="card">
                     <div class="card-header fw-bold">Interest Clusters</div>
                     <div class="card-body text-center p-2">
-                        <img src="analysis_results/cluster_visualization.png" class="img-fluid rounded" alt="2D Cluster plot of favorite papers">
+                        <img src="analysis_results/daily_cluster_map.png" class="img-fluid rounded" alt="2D Cluster plot of favorite papers">
                     </div>
                 </div>
             </div>
@@ -97,10 +97,1901 @@
     
 
     <div class="container py-4">
-        <header class="mb-4"><h1 class="display-5 text-center text-primary">arXiv: Backfill (2026-10-18 to 2026-10-25)</h1></header>
+        <header class="mb-4"><h1 class="display-5 text-center text-primary">arXiv: 2026-10-27</h1></header>
 
         
+        <div class="row justify-content-center">
+            <div class="col-lg-8 mb-4">
+                <div class="card">
+                    <div class="card-header fw-bold">Score Distribution of All Papers Found Today</div>
+                    <div class="card-body text-center p-2">
+                        <img src="analysis_results/score_distribution.png" class="img-fluid rounded" alt="Score distribution of all papers found today">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
 
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">1. Near-exact Upper Confidence Limits for Axion Haloscopes
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Andrea Gallo Rosso, Jan Conrad</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> Applying a likelihood-based inference framework to sequential adaptive frequency scans in axion haloscopes yields substantially tighter upper bounds on axion-photon coupling than existing geometric and Bayesian methods, while formalizing the statistical relationship between these prior approaches and e-values. (gemini fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">The data acquisition of axion haloscopes commonly implements sequential adaptive frequency scans. We present a method to calculate likelihood-based upper confidence limits on axion-photon coupling under this circumstance. We compare the likelihood-based method conceptually and quantitatively with tailor-made methods, i.e. the one proposed by Brubaker et al. (Geometric) and its upgrade the Bayesian Power-Measured (BPM) framework proposed by Palken et al. We find that the likelihood method yields average upper limits that are significantly more constraining than those obtained from these methods. For example, expected constraints improve by a factor of 1.4 as compared with the current state of the art when applied to projections for the ALPHA Plasma-haloscope. We further clarify the statistical basis for the Geometric and BPM methods. In particular, we point out the correspondence of BPM to e-values, proposed as an alternative to conventional p-values in statistics.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.34325" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.34325" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.34325" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.4</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.94</span>
+                        
+                            <span class="badge bg-secondary">physics.data-an</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">2. How To Build A Modern Diffusion Language Model
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Volodymyr Kuleshov, Marianne Arriola, Yair Schiff, Gilad Turok, Guanghan Wang</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> This sequential process leaves parallel GPU hardware underutilized during inference--a bottleneck that has grown acute as progress shifts toward scaling post-training and inference-time compute--and commits irreversibly to each token without the ability to revise earlier mistakes. (sumy fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">The frontier of large language model (LLM) performance has advanced rapidly in recent years, fueled by scaling laws for pretraining on large text corpora. However, mainstream LLMs have fundamental limitations: they generate text autoregressively, producing outputs sequentially from left to right one token at a time. This sequential process leaves parallel GPU hardware underutilized during inference--a bottleneck that has grown acute as progress shifts toward scaling post-training and inference-time compute--and commits irreversibly to each token without the ability to revise earlier mistakes. Discrete diffusion models address these limitations by generating tokens in parallel, starting from a noisy or masked sequence and iteratively refining the entire output over a series of denoising steps. This parallel generative process enables speeds of thousands of tokens per second, provides a new axis of inference-time compute scaling, and supports built-in error correction and controllable generation. Over the past two years, discrete diffusion has scaled to billions of parameters across biological sequence modeling and natural language, with open-weights and commercial releases from leading labs. This article provides a survey of key ideas in discrete diffusion and a high-level introduction to how modern diffusion LLMs are built, covering their foundations, core algorithmic and architectural building blocks, applications in biology and language, and implications for future LLM scaling laws.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.33391" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.33391" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.33391" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.4</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.94</span>
+                        
+                            <span class="badge bg-secondary">cs.AI</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0 / deep learning, representation learning, probabilistic modeling</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">3. Dark Matter and MOND successes and degeneracies in reproducing SPARC rotation curves and weak lensing data
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <div onclick="toggleAuthors(this)" style="cursor: pointer;">
+                            <strong>
+                                <span class="author-short">Amy Smith, Francesco Shankar, Daeun Jeong, Nicola Menci, Andrea Lapi, Hao Fu, Xinyu Dai, Mariangela Bernardi, Arianna Di Cintio, Annagrazia Puglisi, et al.</span>
+                                <span class="author-full" style="display: none;">Amy Smith, Francesco Shankar, Daeun Jeong, Nicola Menci, Andrea Lapi, Hao Fu, Xinyu Dai, Mariangela Bernardi, Arianna Di Cintio, Annagrazia Puglisi, Alexander Belyaev, Hendrik Ulbricht, Ivette Fuentes-Guridi</span>
+                            </strong>
+                            <a class="author-toggle text-primary" style="text-decoration: none;"> (show all)</a>
+                        </div>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> The observed rotation velocities of spiral galaxies at large scales exceed those predicted by their baryonic components, motivating the need for dark matter (DM) or Modified Newtonian Dynamics (MOND). (sumy fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">The observed rotation velocities of spiral galaxies at large scales exceed those predicted by their baryonic components, motivating the need for dark matter (DM) or Modified Newtonian Dynamics (MOND). We fit the rotation curves of 147 late-type galaxies from the SPARC database, using a suite of models including Cold Dark Matter (CDM) models with and without baryonic feedback, Warm DM, Fuzzy DM, and MOND. We also combine SPARC kinematics with weak-lensing data to extend the mean rotation curves to ~1 Mpc. On a galaxy-by-galaxy basis, the inner SPARC rotation curves marginally favour CDM models with baryonic feedback, although accounting for the uncertainties in distances and inclinations increases the degeneracy among DM-based models and MOND. All DM models predict host halo masses larger than abundance-matching expectations, with only the CDM model with baryonic feedback reducing the scatter around the mean luminosity-halo mass relation. MOND is able to reproduce the flatness of the mean galactic rotation curves on scales up to 1 Mpc, providing stellar mass-to-light ratios within observational uncertainties. In contrast, all DM models, without the contribution of mass external to the bound halo, struggle to explain the flat rotation curves. The inclusion of the current weak-lensing data tends to favour MOND over DM models, at least at the largest scales. Future observations from BIG-SPARC, the Square Kilometre Array, and most importantly, upcoming weak-lensing surveys such as EUCLID and Rubin will provide more stringent and independent tests of these competing frameworks</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.33157" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.33157" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.33157" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.4</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.94</span>
+                        
+                            <span class="badge bg-secondary">astro-ph.GA</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: cosmic shear, weak lensing, cosmological constraints / galaxy clustering, weak lensing, galaxy bias</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">4. Data Optimization for LLMs: A Survey
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Ou Wu</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> Finally, we identify key challenges and future directions for LLMs&#39; data optimization compared with conventional deep learning approaches. (sumy fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">Large language models (LLMs) have attracted great attention in both academic and industrial communities in recent years. Numerous survey studies have covered various aspects of LLMs, such as learning strategies, applications, alignment, explainability, and evaluation. However, little headway has been made in reviewing data-related aspects for LLMs, despite data being recognized as a key factor contributing to the emergence of the LLMs era. A wide range of data optimization algorithms and techniques are employed in LLMs&#39; training and application processes. These techniques often originate from diverse deep learning domains, with their theoretical inspirations and heuristic motivations appearing unrelated to each other. This study aims to develop a comprehensive framework for LLMs&#39; data optimization techniques to enhance data utilization and efficiency. We first discuss data challenges in LLMs&#39; training and inference. Second, we summarize data perception dimensions for evaluating LLMs&#39; data properties. These dimensions primarily include quality, difficulty, diversity, and redundancy, laying a foundation for subsequent optimization. Third, existing optimization techniques are reviewed and categorized into four groups: data selection, augmentation, reweighting, and others. Fourth, we analyze interconnections between these categories. Finally, we identify key challenges and future directions for LLMs&#39; data optimization compared with conventional deep learning approaches.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.33405" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.33405" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.33405" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.4</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.94</span>
+                        
+                            <span class="badge bg-secondary">cs.AI</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0 / deep learning, representation learning, probabilistic modeling</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">5. Photometric Redshift Estimation with Hybrid Quantum Neural Network
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <div onclick="toggleAuthors(this)" style="cursor: pointer;">
+                            <strong>
+                                <span class="author-short">Giuseppe Sarracino, Vincenzo Fabrizio Cardone, Irene Graziotti, Crescenzo Tortora, Roberto Scaramella, Andrea Bulgarelli, Carlo Burigana, Farida Farsian, Massimo Meneghetti, Giuseppe Murante, et al.</span>
+                                <span class="author-full" style="display: none;">Giuseppe Sarracino, Vincenzo Fabrizio Cardone, Irene Graziotti, Crescenzo Tortora, Roberto Scaramella, Andrea Bulgarelli, Carlo Burigana, Farida Farsian, Massimo Meneghetti, Giuseppe Murante, Niccolò Parmiggiani, Alessandro Rizzo, Francesco Schillirò, Vincenzo Testa, Tiziana Trombetti, Fabio Roberto Vitello</span>
+                            </strong>
+                            <a class="author-toggle text-primary" style="text-decoration: none;"> (show all)</a>
+                        </div>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> A Hybrid Quantum Neural Network (HQNN) is applied to recover the photometric redshift of a galaxy dataset built using data from two astronomical surveys, the Kilo-Degree Survey (KIDS) and the VISTA Kilo-Degree Infrared Galaxy (VIKING), which provide data with coverage from the optical to the near-infrared electromagnetic spectrum. (sumy fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">A Hybrid Quantum Neural Network (HQNN) is applied to recover the photometric redshift of a galaxy dataset built using data from two astronomical surveys, the Kilo-Degree Survey (KIDS) and the VISTA Kilo-Degree Infrared Galaxy (VIKING), which provide data with coverage from the optical to the near-infrared electromagnetic spectrum. The results are then compared with those obtained by a classical neural network. We see that HQNN consistently recovers the reference photometric redshift with a high statistical fidelity. Furthermore, both the $R^2$ and the MSE found by the HQNN are consistently better than those found by the classical counterpart (albeit consistent in the error range), proving the worth of further investigating these novel technologies for this particular astrophysical application.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.35196" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.35196" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.35196" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.4</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.01</span>
+                        <span class="badge bg-primary">Semantic Score: 0.94</span>
+                        
+                            <span class="badge bg-secondary">astro-ph.GA</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">6. FastPM: Fast Pretrained Model for Cosmological Simulation-Based Inference
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Masaya Yamamoto, Adrian E. Bayer</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> These results demonstrate that transfer learning from fast simulations is a simple and powerful route to high-fidelity SBI, and highlight the promise of simulation-based foundation models in cosmology. (sumy fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">Modern cosmology increasingly relies on large ensembles of expensive simulations to model the non-linear Universe and extract information from upcoming surveys. However, generating high-fidelity simulations---whether gravity-only N-body or full hydrodynamical---requires substantial computational resources. In this work, we demonstrate that transfer learning from fast low-fidelity simulations can dramatically reduce the cost of training machine learning models, in particular for simulation-based inference (SBI). We train a Fast Pretrained Model (FastPM) on a set of Fast Particle-Mesh (FastPM) simulations to infer $Ω_m$ and $σ_8$ from the power spectrum, and finetune on a smaller set of high-fidelity CAMELS N-body and hydrodynamical simulations. To reach a fixed posterior accuracy, the pretrained model requires only 5--15\% of the high-fidelity simulations compared to the number of simulations needed when training on CAMELS alone, reducing the total training simulation compute cost, including that of the pretraining simulations, by up to an order of magnitude in CPU hours. Remarkably, the gains persist for the total matter power spectrum of full hydrodynamical simulations: although FastPM contains no baryonic physics, pretraining on FastPM runs that together cost less than a single hydrodynamical simulation still reduces the total training simulation compute by a factor of $\sim$5. Moreover, pretraining on more accurate FastPM runs yields more accurate posteriors than training on CAMELS alone achieves with any number of simulations we consider. These results demonstrate that transfer learning from fast simulations is a simple and powerful route to high-fidelity SBI, and highlight the promise of simulation-based foundation models in cosmology.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.33955" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.33955" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.33955" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.4</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.94</span>
+                        
+                            <span class="badge bg-secondary">astro-ph.CO</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">7. Emission line stacking on cosmological scales: equivalence to two-point statistics and modelling of the observational effects
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Zhaoting Chen, José Luis Bernal</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> The correlation function estimator provides significant speed-up for the stacking measurement and enables modelling of the signal and its covariance for large LIM datasets with MeerKLASS and future SKAO. (sumy fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">Emission line stacking measurement for cosmological line intensity mapping (LIM) contains not only the average emission line profile of the stacked sources, but usually also the clustering signal, due to the limited angular resolution of the observations. We provide an explicit derivation of the equivalence between the emission line stacking, the two-point cross-correlation function in configuration space and the power spectrum in Fourier space, similar to the case between the angular stacking signal for the kinematic Sunyaev-Zel&#39;dovich effect and the angular power spectrum in harmonic space (arXiv:2512.14625, arXiv:2605.15947). Using the quadratic estimator formalism, we establish that the emission line stacking signal measurement is equivalent to a quadratic estimator for the cross-correlation function. The formalism allows for the explicit modelling of the stacked signal, including the clustering statistics as well as observational effects such as the galaxy selection function and the LIM survey footprint. In particular, using mock HI intensity mapping data, we show that we can accurately model the effects of foreground removal on the stacked signal. The correlation function estimator provides significant speed-up for the stacking measurement and enables modelling of the signal and its covariance for large LIM datasets with MeerKLASS and future SKAO.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.33603" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.33603" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.33603" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.4</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.94</span>
+                        
+                            <span class="badge bg-secondary">astro-ph.CO</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">8. Model-independent calibration of gamma-ray bursts with Bayesian neural networks
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>P. Caterino, M. Demianski, E. Piedipalumbo, L. Amati, D. De Cicco, M. Brescia</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> Gamma-ray bursts (GRBs) extend cosmological distance measurements beyond the range densely sampled by Type Ia supernovae, but their standardization requires reliable calibration and uncertainty estimates. (sumy fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">Context. Gamma-ray bursts (GRBs) extend cosmological distance measurements beyond the range densely sampled by Type Ia supernovae, but their standardization requires reliable calibration and uncertainty estimates. Aims. We calibrate the Amati correlation without assuming a background cosmological model, assess its stability, and examine the cosmological reach of current and future GRB Hubble diagrams. Methods. We train a Bayesian neural network on Pantheon+ supernovae, assess and recalibrate its predictive uncertainties, and calibrate the correlation for GRBs at $z \leq 1.5$ using the D&#39;Agostini and Reichart likelihoods. We combine the GRB Hubble diagram with supernovae, Hubble-parameter measurements, and DESI baryon acoustic oscillations. Local-regression, covariance, leave-three-out, redshift-evolution, and Efron-Petrosian diagnostics test the standardization assumptions. We also analyse idealized future catalogues of 1500 standardized GRBs. Results. The diagram reaches $z \simeq 9.4$. Covariance and leave-three-out diagnostics produce small changes in the cosmological constraints. A parametric evolution coefficient is consistent with zero, whereas the truncation-corrected diagnostic indicates marginal isotropic-energy evolution that can occur along the Amati relation. Dark-energy extensions improve the phenomenological fit relative to flat $Λ$CDM: AIC favours the Chevallier-Polarski-Linder parametrization, while BIC favours constant-$w$ dark energy. Forecasts show strong conditional model-discrimination power under the adopted uncertainty model. Conclusions. GRBs provide a complementary high-redshift extension of the supernova distance ladder. Present results do not establish an evolving dark-energy equation of state. Larger homogeneous samples are promising, but realistic selection functions and calibration systematics remain essential.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.35503" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.35503" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.35503" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.4</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.01</span>
+                        <span class="badge bg-primary">Semantic Score: 0.93</span>
+                        
+                            <span class="badge bg-secondary">astro-ph.CO</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">9. Assessing the detectability of a realistic massive black hole binary population in LSST
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Lorenzo Bertassi, Beatrice Sala, Edyn Davies, Fabio Rigamonti, Maria Charisi, Riccardo Buscicchio, Paola Severgnini, Massimo Dotti</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> In this work, we assess the performance of a recently proposed flexible detection algorithm for periodicities of arbitrary shapes with simulated LSST-like data that span its 10-year baseline. (sumy fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">Electromagnetic signatures of massive black hole binaries (MBHB) are expected to be found in quasar light curves. Specifically, MBHB light curves are expected to show periodic modulations which may originate from different physical processes. The detection of such periodicities requires algorithms suitable to model modulations with arbitrary shapes embedded in quasar red noise, in massive datasets. With the advent of the Vera C. Rubin Observatory Legacy Survey of Space and Time (LSST), such sources may finally be within reach in the next decade. In this work, we assess the performance of a recently proposed flexible detection algorithm for periodicities of arbitrary shapes with simulated LSST-like data that span its 10-year baseline. For the first time, we examine a physically motivated population of binaries and assess the effect of assumed priors on the period on the periodicity search. We study two methods to set the detection threshold: the first based on the posterior odds ratio, which assumes knowledge of the expected fraction of binaries in quasar light curves, and the second, which limits the detection of false positives. We find that the expected distribution of detected periods shows a clear peak between 5 and 10 years, depending on the specific LSST band considered. We recover a detected binary fraction ranging from ~ 20% to ~ 3% depending on the detection threshold assumed and the band analysed, with the peak of the observed period distribution depending on the underlying binary period distribution. Therefore, the detection of a population of binaries in LSST can constrain the binary population and shed light on their evolution.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.33159" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.33159" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.33159" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.4</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.94</span>
+                        
+                            <span class="badge bg-secondary">astro-ph.GA</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">10. The Hitchhiker&#39;s Guide to System 1 Models: Fast Decision-Making Beyond LLMS
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Haggai Roitman</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> Large Language Models excel at reasoning and generation but their autoregressive, token-by-token inference makes them unnecessarily slow, expensive, and poorly calibrated for the many routine decisions (routing, gating, scoring, classification) that modern AI systems require at sub-second latency. (sumy fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">Large Language Models excel at reasoning and generation but their autoregressive, token-by-token inference makes them unnecessarily slow, expensive, and poorly calibrated for the many routine decisions (routing, gating, scoring, classification) that modern AI systems require at sub-second latency. A growing class of models addresses this gap: System 1 decision models, architectures that map an input directly to a typed, structured decision in a single forward pass. This guide provides a comprehensive, practitioner-oriented treatment of the field. We propose a five-family taxonomy covering encoder-based classifiers, reward models, non-autoregressive decision engines, contrastive decision models, and extraction models, and we provide in-depth coverage of each family&#39;s architecture, training methodology, and deployment trade-offs. A central theme is calibration: we develop the theory of proper scoring rules, analyze Reinforcement Learning for Calibrated Decisions (RLCD), and examine recently discovered phenomena including IIA violations, ordinal-scale bias, and few-shot recalibration under distribution shift. On the integration side, we describe how System 1 models serve as decision infrastructure within agentic workflows and System 1 + System 2 cascades that route between fast and slow models based on calibrated confidence. The guide covers 18 application domains, maps the rapidly growing open-source ecosystem (over 70 model reproductions in weeks), provides runnable code throughout, and includes a practitioner&#39;s checklist, an open-source model zoo, and 22 self-assessment questions with detailed answers. Spanning 190 references, it is intended as a unified entry point for researchers and engineers working at the intersection of fast decision-making, calibration, and production AI systems.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.33775" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.33775" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.33775" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.3</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.93</span>
+                        
+                            <span class="badge bg-secondary">cs.AI</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0 / deep learning, representation learning, probabilistic modeling</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">11. HIFI: A Highly Efficient Framework for Statistical Inference with Foundation Models
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Po-Wei Chen, Shan Yu, Chunlin Li</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> For neural estimators that lack a tractable sampling distribution, resampling-based procedures offer a flexible route to statistical inference, but they often require hundreds of model fits, making them computationally prohibitive at foundation-model scale. (sumy fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">Foundation models provide powerful representations for unstructured data, such as text and images, and parameter-efficient fine-tuning (PEFT) makes their adaptation to downstream tasks increasingly practical. For neural estimators that lack a tractable sampling distribution, resampling-based procedures offer a flexible route to statistical inference, but they often require hundreds of model fits, making them computationally prohibitive at foundation-model scale. We introduce HIFI, a two-stage fine-tuning framework for statistical inference on parameters such as conditional means. Stage 1 adapts a foundation model once on a larger sample, capturing the complex structure of the data and controlling estimation bias through a single fit. Stage 2 applies a resampling inference procedure to a smaller independent sample, concurrently fitting multiple lightweight PEFT estimators to the residual to quantify estimation variability without relearning the full task. HIFI accommodates a broad class of resampling procedures, including ensemble subsampling and the nonparametric bootstrap. Across vision and text experiments, HIFI scales to pretrained models ranging from tens of millions to more than ten billion parameters while providing accurate point estimates and well-calibrated confidence intervals across diverse architectures, and reduces training compute by up to 91.9% relative to direct resampling. An application to gene-expression inference illustrates the practical value of the framework for uncertainty-aware scientific inference.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.34550" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.34550" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.34550" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.3</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.93</span>
+                        
+                            <span class="badge bg-secondary">stat.ML</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0 / deep learning, representation learning, probabilistic modeling</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">12. pbhalo: computing primordial black hole and minihalo populations from a single primordial perturbation spectrum
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>B. A. Rudenko</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> An enhancement of the primordial curvature power spectrum on small scales can give rise to two populations of compact objects: primordial black holes (PBHs), which form during radiation domination, and dark matter minihalos, including ultracompact minihalos (UCMHs), which form from the same modes during matter domination. (sumy fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">An enhancement of the primordial curvature power spectrum on small scales can give rise to two populations of compact objects: primordial black holes (PBHs), which form during radiation domination, and dark matter minihalos, including ultracompact minihalos (UCMHs), which form from the same modes during matter domination. We present pbhalo, an open-source Python package that computes the PBH mass function, the halo mass function and the UCMH abundance from a single spectrum in a given cosmology and applies observational constraints on the PBH abundance and on the spectrum jointly. The package components are validated against colossus (a code for halo mass functions and cosmological quantities), pbhstat (a code for the PBH mass function from a given spectrum) and published results; joint constraints are illustrated for lognormal peaks. The code is distributed under the MIT license.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.35703" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.35703" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.35703" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.3</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.93</span>
+                        
+                            <span class="badge bg-secondary">astro-ph.CO</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">13. Constraining the Inner Dark Matter Profiles of Strong-Lensing Galaxy Clusters
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Emma M. Strickland, Zelie Goldberg Little, Jackson H. O&#39;Donnell, Tesla E. Jeltema</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> All three clusters are relaxed and have giant arc or ring lens structures ideal for constraints on the dark matter distribution. (sumy fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">We present mass modeling of three strong lensing galaxy clusters found in the Dark Energy Survey utilizing Hubble Space Telescope imaging for lens modeling, and complementary constraints from Chandra X-ray observations. All three clusters are relaxed and have giant arc or ring lens structures ideal for constraints on the dark matter distribution. The strong lens modeling and X-ray temperatures yield consistent total cluster mass estimates. We find these clusters have best-fit X-ray temperatures of $2.7 - 6.2$ keV and total masses of M$_{200} = (1-6) \times 10^{14} M_{\odot}$. Our lens models parameterize dark matter distribution with a generalized Navarro-Frenk-White (GNFW) density profile. While the GNFW profile allows the inner dark matter slope to vary, we find in all cases that the inner slopes are consistent with the standard NFW density profile $γ^{DM} = 1$. The X-ray surface brightness distributions for all three clusters are generally symmetric with no significant substructure, supporting the conclusion that these are relaxed clusters. In addition, we find generally low values of the external shear magnitude with median values ranging $|γ^{ext}| = 0.04-0.09$ and consistent with zero for two of the clusters.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.33370" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.33370" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.33370" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.3</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.93</span>
+                        
+                            <span class="badge bg-secondary">astro-ph.CO</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: cosmic shear, weak lensing, cosmological constraints / galaxy clustering, weak lensing, galaxy bias</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">14. Comment on &#34;Test of the Gravitational Force Law on Cosmological Scales Using the Kinematic Sunyaev--Zeldovich Effect&#39;&#39;
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Alessandro Melchiorri</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> Gaussian realizations with peak-selected tracers find the same proportionality to within 2\% (0.5\% for the fiducial selection), and refitting the data of the Letter with the resulting template gives $χ^2=20.1$--$20.2$, against $20.1$ for the Newtonian template and $33.8$ for Eq.~(8): in every controlled case examined the data do not discriminate between $n=1$ and $n=2$, and the $3.3σ$ exclusion, with the $10σ$ forecast that rescales it, rests on the order in which the average and the power were taken. (sumy fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">Gallardo et al. [Phys. Rev. Lett. \textbf{136}, 151002 (2026)] constrain the index of the force law $g\propto r^{-n}$ with pairwise kinematic Sunyaev--Zeldovich measurements, $n=2.1\pm0.3$, and exclude the deep-MOND value $n=1$ at $3.3σ$. The exclusion does not follow from their calculation. Their templates for $n\neq2$ [their Eq.~(8)] raise the pair-averaged Newtonian acceleration to the power $n/2$, whereas the pair average of the pointwise law [their Eq.~(30) for deep MOND] is the average of the transformed field; the step that identifies the two attributes to the three-point function a correction that is of second order and not small. In a Gaussian linear field with linearly biased tracers, Gaussian integration by parts shows that the correctly averaged template is exactly proportional to the Newtonian one, with a constant that the analysis absorbs into the mean optical depth. Gaussian realizations with peak-selected tracers find the same proportionality to within 2\% (0.5\% for the fiducial selection), and refitting the data of the Letter with the resulting template gives $χ^2=20.1$--$20.2$, against $20.1$ for the Newtonian template and $33.8$ for Eq.~(8): in every controlled case examined the data do not discriminate between $n=1$ and $n=2$, and the $3.3σ$ exclusion, with the $10σ$ forecast that rescales it, rests on the order in which the average and the power were taken. What a self-consistent MOND cosmology predicts for this observable is a separate question, which the Letter does not address.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.34437" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.34437" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.34437" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.3</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.01</span>
+                        <span class="badge bg-primary">Semantic Score: 0.93</span>
+                        
+                            <span class="badge bg-secondary">astro-ph.CO</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: cosmic shear, weak lensing, cosmological constraints / galaxy clustering, weak lensing, galaxy bias</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">15. A Comprehensive Framework for All Stages of Large-Model Training: From Data and Tokenization, through Pretraining, to Post-Training Alignment
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Xiangjing An, Zhibin Jiao, Aiting Chen</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> This paper proposes a unified stage division and a six-dimensional analytical framework covering data, objective function, optimization strategy, system constraints, evaluation, and risk and governance. (sumy fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">The capabilities of large language models (LLMs) and multimodal LLMs (MLLMs) arise from the synergy of the full training pipeline, including data and tokenization, pretraining, and post-training (supervised fine-tuning, preference alignment, reinforcement learning, and continual optimization), rather than any individual stage. Existing surveys mostly adopt a single-stage or single-technique perspective, treating related research as isolated systems without unified stage division or a horizontally comparable basis. This paper proposes a unified stage division and a six-dimensional analytical framework covering data, objective function, optimization strategy, system constraints, evaluation, and risk and governance. We systematically review 395 core references from 2017 to 2026, and present a conceptual map of cross-stage effects: forward constraints of pretraining on post-training, and reverse empowerment of post-training on data and pretraining. We derive three core findings. First, the comparability of scaling laws depends on data quality and mixture, a long-neglected variable. Second, preference alignment methods (RLHF, DPO) and reasoning reinforcement learning with verifiable rewards redefine post-training boundaries, while the Pass@1 versus Pass@K debate remains unresolved. Third, multimodal training poses structural challenges to the pure-text paradigm in tokenizer design, training objectives, and evaluation. The paper provides a cross-stage effects diagram, a method-family map, a practical decision tree, and at least 10 verifiable open problems, with an extensible skeleton for focused sub-surveys per stage. As of the retrieval date, peer-reviewed evidence (A+B) accounts for approximately 79% of the 395 references.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.33451" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.33451" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.33451" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.3</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.93</span>
+                        
+                            <span class="badge bg-secondary">cs.AI</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0 / deep learning, representation learning, probabilistic modeling</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">16. Mapping the Milky Way with SDSS-V: Galactic Genesis Selection Function and Mock Catalog
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <div onclick="toggleAuthors(this)" style="cursor: pointer;">
+                            <strong>
+                                <span class="author-short">Madeline Lucey, Zoe Hackshaw, Robyn Sanderson, Ilija Medan, Alexander P. Ji, Jonathan C. Bird, Joel R. Brownstein, Julie Imig, Dhanesh Krishnarao, Juna A. Kollmeier, et al.</span>
+                                <span class="author-full" style="display: none;">Madeline Lucey, Zoe Hackshaw, Robyn Sanderson, Ilija Medan, Alexander P. Ji, Jonathan C. Bird, Joel R. Brownstein, Julie Imig, Dhanesh Krishnarao, Juna A. Kollmeier, Richard R. Lane, Jianhui Lian, Andrew K. Saydjari, Andrew Tkachenko</span>
+                            </strong>
+                            <a class="author-toggle text-primary" style="text-decoration: none;"> (show all)</a>
+                        </div>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> The resulting selection function reflects the survey&#39;s targeting strategy and observing history, including the transition from the pencil-beam SDSS-IV footprint to the fuller sky coverage of SDSS-V and the prioritization of the Magellanic Clouds. (sumy fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">Robust chemodynamic mapping of the Milky Way requires accounting for the selection function of the survey used, the probability that a given star is included in the final catalog as a function of its observable properties. We derive the empirical selection function of the SDSS-V Galactic Genesis survey, the largest Milky Way Mapper program targeting red giant stars for Galactic structure studies. Treating the Galactic Genesis sample as a subsample of its 2MASS parent catalog, we model the selection function as a function of sky position, apparent H magnitude, and G-H color using a Bayesian binomial estimator, computing both a mean and maximum a posteriori (MAP) version. The resulting selection function reflects the survey&#39;s targeting strategy and observing history, including the transition from the pencil-beam SDSS-IV footprint to the fuller sky coverage of SDSS-V and the prioritization of the Magellanic Clouds. Using this selection function with the FIRE-2 Milky Way-mass simulations, we construct mock Galactic Genesis catalogs built on existing mock Gaia DR3 catalogs, injecting realistic photometric noise and applying the selection function via a per-star Bernoulli accept-reject procedure. We demonstrate the mock catalogs&#39; utility with an example application to azimuthal metallicity variations in the disk. Furthermore, we release a Python package allowing users to recompute the selection function for their own samples and science cases. The package, selection function and mock catalogs will be updated and made available as the survey continues, extending the tools needed to reach the full scientific potential of SDSS-V Galactic Genesis.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.35713" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.35713" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.35713" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.3</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.93</span>
+                        
+                            <span class="badge bg-secondary">astro-ph.GA</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">17. HobbyLM: A Sparse Mixture-of-Experts Model Family on a Hobby Budget
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Harish Santhanalakshmi Ganesan, Hariharan M. S., Prabhurajhan R</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> We describe HobbyLM, a family of small sparse Mixture-of-Experts (MoE) models trained from scratch with a few hundred to a few thousand dollars of rented GPU time. (sumy fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">We describe HobbyLM, a family of small sparse Mixture-of-Experts (MoE) models trained from scratch with a few hundred to a few thousand dollars of rented GPU time. The core is a decoder-only transformer with fine-grained experts, sigmoid routing with auxiliary-loss-free load balancing, grouped-query attention with per-head QK-normalization, and aMuon/AdamW optimizer split. Each of these choices was selected with a single-variable ablation suite at 130M parameters. On this architecture we train a 500M-parameter model (169M active) on 40B FineWeb tokens and post-train it into a chat model, a masked-diffusion language model, a function-calling and computer-use agent, and a single &#34;omni&#34; checkpoint that reads text, images, video, sound and speech through frozen encoders and small projectors. We run these models on a laptop CPU with a from-scratch Rust inference engine. Two of the authors then adopted the architecture without architectural changes to build HobbyLM-1B (1.04B total, 305M active parameters), trained on a 100B-token curated mixture with a high-quality anneal. HobbyLM-1B reaches a 47.5 average on seven zero-shot benchmarks, and its builders also release an instruction-tuned model and an on-device macOS computer-use adapter. Finally, we describe HobbyLM-Image, a 333M-parameter flow-matching diffusion transformer that generates 1024x1024 images in a 32x-compressed latent space, together with a dependency-light CPU implementation of the full text-to-image pipeline. We report what worked, what did not, and where the small-scale ceilings lie. We also state for each component which author designed or built it.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.34582" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.34582" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.34582" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.3</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.93</span>
+                        
+                            <span class="badge bg-secondary">cs.AI</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0 / deep learning, representation learning, probabilistic modeling</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">18. Accurate pulsar timing array likelihoods: better low-rank covariance for gravitational wave background
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Heling Deng, Ken D. Olum, Rutger van Haasteren</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> Although this rank-reduced modeling significantly accelerates likelihood evaluation and provides a good approximation in many scenarios, it can lead to biased parameter inference because it is insensitive to spectral features on scales smaller than $\sim 0.1~\mathrm{yr}^{-1}$. (sumy fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">In pulsar timing array analyses, the stochastic process describing the gravitational wave background is typically modeled using a Fourier basis at discrete frequencies with an interval $\sim 0.1~\mathrm{yr}^{-1}$, with a diagonal Fourier-domain covariance determined by the power spectral density at the corresponding frequencies. Although this rank-reduced modeling significantly accelerates likelihood evaluation and provides a good approximation in many scenarios, it can lead to biased parameter inference because it is insensitive to spectral features on scales smaller than $\sim 0.1~\mathrm{yr}^{-1}$. We introduce a better construction of the low-rank covariance for low-frequency processes by maximizing the log-likelihood averaged over an ensemble of realizations drawn from the true model likelihood. In this approach, the basis-domain covariance matrix is sensitive to the entire model spectrum and is generally non-diagonal. Using two mock datasets, we demonstrate improved likelihood accuracy and more faithful recovery of spectral features compared to the conventional Fourier-diagonal model. Benchmark tests show that this new model requires a computational cost comparable to that of the conventional approach.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.33444" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.33444" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.33444" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.3</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.93</span>
+                        
+                            <span class="badge bg-secondary">gr-qc</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">19. Anomalous Soft Photons: A Brief Overview
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Klaus Reygers</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> For a detailed account of the experimental history and theory, we refer to the recent review article Phys. (sumy fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">These conference proceedings provide a compact experimental perspective on the soft-photon puzzle. The puzzle refers to the long-standing discrepancy between soft-photon data in hadronic reactions and predictions based on Low&#39;s soft-photon theorem. We summarize the theoretical baseline, representative measurements, and the main experimental challenges. For a detailed account of the experimental history and theory, we refer to the recent review article Phys. Rept., 1097:1, 2024.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.34216" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.34216" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.34216" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.3</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.93</span>
+                        
+                            <span class="badge bg-secondary">hep-ph</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">20. CANS: Capability-Preserving Neuron Steering for Large Language Models
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Yucheng Wu, Chengyi Xie, Chenpeng Wang, Liangming Pan</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> Activation steering offers training-free and dynamic control of target behaviors in large language models, but existing methods can impair general capabilities and require domain-specific intervention designs. (sumy fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">Activation steering offers training-free and dynamic control of target behaviors in large language models, but existing methods can impair general capabilities and require domain-specific intervention designs. We introduce Capability-Preserving Neuron Steering (CANS), a unified framework that balances target-behavior control with capability preservation. To make target-behavior improvement and general-capability preservation tractable, we introduce two proxies: log-probabilities of target tokens in model generated responses, and output-distribution KL divergence on general-purpose inputs. Combining the local approximation of the two proxies yields a closed-form solution, enabling lightweight steering without iterative model training or additional inference-time computation. The resulting neuron-wise scaling coefficients achieve effective steering while limiting general-capability loss. A shared data-construction and intervention procedure supports adaptation across domains using sampled responses with target-behavior filtering and target-span annotations. Across safety, toxicity, and hallucination control on Qwen and Llama models, CANS achieves comparable or better steering while better preserving MMLU, BBH, and IFEval performance than SFT, CAA, and neuron-level baselines. On Qwen3-4B, CANS reduces HarmBench attack success from $15.50\%$ to $1.75\%$ with a $1.11$-point decrease in average capability. These results support CANS as a practical approach to behavioral control across domains.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.35530" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.35530" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.35530" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.3</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.93</span>
+                        
+                            <span class="badge bg-secondary">cs.AI</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0 / deep learning, representation learning, probabilistic modeling</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">21. SAP-ViT: A Self-Attributing Patch Vision Transformer for Medical Image Classification
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Wei Zhang, Wolfgang Nejdl, Ming Tang</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> Vision Transformer (ViT) classifiers commonly rely on a global classification (CLS) token for image-level prediction, which is poorly aligned with local interpretability requirements in medical imaging. (sumy fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">Vision Transformer (ViT) classifiers commonly rely on a global classification (CLS) token for image-level prediction, which is poorly aligned with local interpretability requirements in medical imaging. We propose SAP-ViT, a Self-Attributing Patch Vision Transformer that replaces CLS-based classification with direct aggregation of last-layer patch embeddings. This design makes class predictions decomposable into patch-level contributions as part of the forward pass. To encourage concise and readable evidence, SAP-ViT applies sparsity regularization to the patch-weight distribution. Since self-attention mixes information across patch tokens, we further introduce an input-space back-mapping mechanism to estimate which input patches contribute to influential output patch embeddings. We evaluate SAP-ViT qualitatively and quantitatively on multiple medical image classification datasets spanning different imaging modalities. The results show that SAP-ViT maintains strong classification performance while providing consistent and interpretable patch-level explanations across datasets. Ablation results further show that both sparsity regularization and the alignment component of input-space back-mapping contribute to the final explanation quality. Overall, SAP-ViT provides a favorable trade-off between predictive accuracy and interpretability for ViT-based medical image classification.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.35593" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.35593" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.35593" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.3</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.93</span>
+                        
+                            <span class="badge bg-secondary">cs.AI</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0 / deep learning, representation learning, probabilistic modeling</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">22. Kernelised covariance matrices, dimension reduction and imbalanced spectral clustering
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Xiaoyu Dong, Subhro Ghosh, Soumendu Sundar Mukherjee, Himasish Talukdar</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> In this work, we investigate kernelised covariance matrices as an alternative mechanism for dimension reduction and spectral clustering, focusing on truncation kernels that select pairs of data points with suitable separation constraints. (sumy fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">The Gaussian Mixture Model (abbrv. GMM) is a classic generative model for clustered data, for which spectral clustering based on dimension reduction via PCA has been an effective framework. In this work, we investigate kernelised covariance matrices as an alternative mechanism for dimension reduction and spectral clustering, focusing on truncation kernels that select pairs of data points with suitable separation constraints. The structure of these matrices is motivated by considerations from statistical mechanics of repulsive particle systems. Our approach is particularly relevant for the setting of imbalanced clusters, where the sizes of the largest and smallest clusters have a diverging ratio with the problem size, and existing PCA-based methods turn out to be of limited effectiveness. We demonstrate efficient dimension reduction and clustering performance of these modified covariance matrices, substantiated by quantitative bounds. In particular, they achieve superior dimension reduction guarantees compared to PCA for a wide range of parameters in the regime of imbalanced clusters. For spectral clustering, our approach exhibits improvements over PCA in the imbalanced setting, in particular guaranteeing accurate clustering in a much larger regime of intra-cluster separations. Our theoretical guarantees reflected in a range of simulation experiments that exhibit these improvements for unbalanced clustering problems. Our analytical approach, based on kernel Laplacians, provide a toolbox as well as a relevant conceptual ingredient for clustering problems at large. We believe that our work will motivate the application of such kernelised covariance matrices for related classes of statistical problems, as well as spur new investigations in the theory of random matrices.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.33177" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.33177" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.33177" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.3</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.93</span>
+                        
+                            <span class="badge bg-secondary">stat.ML</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">23. Comment on &#34;Effect of perfect fluid dark matter...&#34; [Phys. Dark Univ. 34 (2021) 100891]
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Ming-Hsun Li, Kwei-Chou Yang</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> We point out that the metric, originally derived in Li and Yang (2012), describes a specific dual-component system consisting of cold dark matter and a phantom field background. (sumy fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">This Comment clarifies the physical interpretation of the black hole spacetime metric employed by Shaymatov \textit{et al.} [Phys. Dark Univ. 34 (2021) 100891]. We point out that the metric, originally derived in Li and Yang (2012), describes a specific dual-component system consisting of cold dark matter and a phantom field background. Treating this geometry as a single-component ``Perfect Fluid Dark Matter&#39;&#39; (PFDM) with a total equation of state $w_{\mathrm{total}} = -1$ is physically incompatible with the gravitational attraction required for dark matter halos. Furthermore, we clarify the distinct parameter regimes of the original model to prevent potential misapplications in extreme astrophysical scenarios.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.34019" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.34019" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.34019" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.3</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.93</span>
+                        
+                            <span class="badge bg-secondary">gr-qc</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">24. Calibration requirements for Epoch of Reionization 21-cm signal observations - V. Bias and variance in the cylindrical power spectrum from uGMRT Band 3 observations of the ELAIS-N1 field
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <div onclick="toggleAuthors(this)" style="cursor: pointer;">
+                            <strong>
+                                <span class="author-short">Saikat Gayen, Suvam Tripathy, Saqueb Tanveer, Prasun Dutta, Abhik Ghosh, Khandakar Md Asif Elahi, Sarvesh Mangla, Nirupam Roy, Samir Choudhuri, Somnath Bharadwaj, et al.</span>
+                                <span class="author-full" style="display: none;">Saikat Gayen, Suvam Tripathy, Saqueb Tanveer, Prasun Dutta, Abhik Ghosh, Khandakar Md Asif Elahi, Sarvesh Mangla, Nirupam Roy, Samir Choudhuri, Somnath Bharadwaj, Sk Saiyad Ali, Jais Kumar, Srijita Pal, Arnab Chaktaborty, Rashmi Sagar, Abhirup Datta</span>
+                            </strong>
+                            <a class="author-toggle text-primary" style="text-decoration: none;"> (show all)</a>
+                        </div>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> Our results emphasise the necessity of improved calibration accuracy and robust characterisation of residual gain statistics for current and upcoming interferometric experiments such as the uGMRT and SKA, to enable reliable detection of the cosmological 21-cm signal. (sumy fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">Detection of the redshifted 21-cm signal from neutral hydrogen requires precise control of systematic effects arising from instrumental calibration. In this work, we investigate the impact of both time- and frequency-dependent residual gain and bandpass errors on the estimation of the multifrequency angular power spectrum (MAPS) using radio interferometric observations. We discuss our previously developed analytical framework for estimating bias and excess variance in 21-cm signal MAPS in the presence of these residual errors and apply it to uGMRT Band-3 observations. The statistical properties of the residual gains are derived from the data themselves, including their temporal and spectral correlations. We introduce a robust technique for additionally flagging poor-quality data. Our results show that the excess variance induced by residual gain and bandpass errors dominates over the bias across the range of angular multipoles considered. The amplitude of this variance is comparable to the expected power spectrum upper limit at redshift $z \sim 2.2$, indicating that residual calibration errors can significantly affect the detectability of the 21-cm signal. We further transform the estimated MAPS into ($k_{\perp}, k_{ll}$) space and find the expected foreground wedge structure. Importantly, we observe a significant power leakage into the nominal EoR window, which we attribute to residual calibration systematics. This highlights that even after standard foreground mitigation, time- and frequency-correlated gain errors can introduce mode-mixing and contaminate the EoR window. Our results emphasise the necessity of improved calibration accuracy and robust characterisation of residual gain statistics for current and upcoming interferometric experiments such as the uGMRT and SKA, to enable reliable detection of the cosmological 21-cm signal.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.35046" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.35046" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.35046" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.3</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.93</span>
+                        
+                            <span class="badge bg-secondary">astro-ph.CO</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">25. Forecasting Strongly Lensed Binary Black Hole Rates from the Stochastic Gravitational-Wave Background with TianQin
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Zheng-Cheng Liang</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> The millihertz stochastic gravitational-wave background (SGWB) provides a population-level probe of stellar-mass binary black holes (BBHs) and their cosmic merger history. (sumy fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">The millihertz stochastic gravitational-wave background (SGWB) provides a population-level probe of stellar-mass binary black holes (BBHs) and their cosmic merger history. We develop a framework using TianQin alone to propagate SGWB-informed BBH population constraints into forecasts of strongly lensed BBH mergers detectable by ground-based gravitational-wave detectors. The framework distinguishes between lensed events with at least one detected image and lens systems in which both images are detected and successfully associated. Using a one-year mock observation, we infer the BBH population and propagate the resulting posterior through a galaxy-scale lensing model with image-level selection. For the adopted system-magnification threshold, \(μ_{\rm sys}\ge 2\), the median predicted rate of lensed events with at least one detected image is \(R_{\rm event}^{\rm det}=5.50\times10^{-4}\,\mathrm{yr}^{-1}\), while the median rate of associated two-image lens systems is \(R_{\rm sys}^{\rm det}=2.54\times10^{-4}\,\mathrm{yr}^{-1}\); the median detectable system fraction is \(\mathcal{F}_{\rm sys}^{\rm det}=3.35\times10^{-4}\). Compared with the prior-only propagation, the pooled 16th--84th percentile widths decrease by 6.5\% for the event rate, 6.4\% for the system rate, and 4.0\% for the system fraction. Our work establishes a quantitative link between millihertz SGWB inference and forecasts of strongly lensed BBH mergers for ground-based gravitational-wave observations.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.33751" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.33751" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.33751" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.2</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.92</span>
+                        
+                            <span class="badge bg-secondary">gr-qc</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">26. A Tool-Grounded AI Agent for Gauge Coupling Unification and Proton Decay
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Shaikh Saad</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> We present proton_agent, a tool-grounded AI agent that enables natural-language interaction with computational tools for gauge coupling unification and proton decay in grand unified theories. (sumy fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">We present proton_agent, a tool-grounded AI agent that enables natural-language interaction with computational tools for gauge coupling unification and proton decay in grand unified theories. The agent translates user requests into computational tasks, selects and executes the appropriate tools, and interprets their outputs. All numerical calculations, model evaluations, experimental comparisons, parameter scans, and visualizations are handled by a deterministic scientific backend to ensure numerical accuracy and reproducibility. A central objective of this framework is to enable fully local deployment using free and open-source LLMs, while retaining compatibility with commercial LLM APIs. The framework computes one- and two-loop gauge beta coefficients for user-defined scalar and fermion multiplets and performs gauge coupling evolution through the Standard Model and various intermediate symmetry-breaking stages of $SO(10)$, including $SU(3)_C \times SU(2)_L \times SU(2)_R \times U(1)_{B-L}$, $SU(3)_C \times SU(2)_L \times U(1)_R \times U(1)_{B-L}$, $SU(4)_C \times SU(2)_L \times U(1)_R$, and $SU(4)_C \times SU(2)_L \times SU(2)_R$. For proton decay, the framework evaluates gauge-mediated dimension-six contributions in non-supersymmetric $SU(5)$ and $SO(10)$, as well as dressed dimension-five contributions in their supersymmetric counterparts. It supports benchmark calculations for user-specified parameter points, random and grid-based parameter scans, Markov-chain Monte Carlo exploration, comparisons with experimental limits, and publication-ready two- and three-dimensional visualizations. We describe the agent architecture, demonstrate its capabilities through representative benchmark calculations and regression tests, and discuss its current physics scope.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.33593" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.33593" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.33593" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.2</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.92</span>
+                        
+                            <span class="badge bg-secondary">hep-ph</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">27. Recently launched AGN-driven outflow in a lensed quiescent galaxy at Cosmic Noon
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <div onclick="toggleAuthors(this)" style="cursor: pointer;">
+                            <strong>
+                                <span class="author-short">Letizia Bugiani, Andrew B. Newman, Sirio Belli, Cosimo Marconcini, Pietro Bergamini, Sai Gangula, Claudio Grillo, Andrea Bolamperti, Katherine E. Whitaker, Aliza Beverage, et al.</span>
+                                <span class="author-full" style="display: none;">Letizia Bugiani, Andrew B. Newman, Sirio Belli, Cosimo Marconcini, Pietro Bergamini, Sai Gangula, Claudio Grillo, Andrea Bolamperti, Katherine E. Whitaker, Aliza Beverage, Richard S. Ellis, Amir H. Khoram, Allison Matthews, Marco Lombardi</span>
+                            </strong>
+                            <a class="author-toggle text-primary" style="text-decoration: none;"> (show all)</a>
+                        </div>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> This evidence suggests that low-level AGN activity is an important mechanism for maintaining quiescence in massive galaxies at cosmic noon, potentially over cosmological timescales. (sumy fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">We analyze JWST/NIRSpec IFU spectroscopy of MRG-M0150, a gravitationally lensed, massive quiescent galaxy at $z=2.6$ from the INQUEST-JWST survey. Thanks to the combination of lensing magnification with JWST&#39;s angular resolution, we are able to build spatially resolved maps of the ionized gas spatial distribution, kinematics, and ionization properties in this system. We detect ionized gas emission throughout the galaxy: the lack of residual star formation inferred from line-ratio diagnostic diagrams, together with the decoupling between the gas and stellar kinematics, suggest that the ionized gas is in a wind. We use the 3D gas kinematics modeling code \texttt{MOKA3D} to constrain the geometry and physical properties of the ionized gas wind. We find that the observations are consistent with a biconical wind driven by the low-luminosity AGN at the center of the galaxy, which is detected in X-rays. The wind reaches high velocities of $1000-1400$ km/s, implying that part of the gas may escape the halo. The ionized gas mass outflow rate, $(0.6 \pm 0.2)$~${\rm M}_{\odot}$~yr${}^{-1}$, is modest but exceeds the upper limit on the residual star formation rate, and it is likely that the wind is multiphase and carries more mass. We show that typical unresolved observations would not detect the wind, suggesting that the incidence of such outflows may be higher than previously recognized. Simple geometric arguments show that the observed outflow must have been launched $\approx 0.45$~Myr ago from the time of observation. This evidence suggests that low-level AGN activity is an important mechanism for maintaining quiescence in massive galaxies at cosmic noon, potentially over cosmological timescales.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.33176" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.33176" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.33176" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.2</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.92</span>
+                        
+                            <span class="badge bg-secondary">astro-ph.GA</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: cosmic shear, weak lensing, cosmological constraints / galaxy clustering, weak lensing, galaxy bias</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">28. Testing independence in contamination models
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Olivier Lopez, Xavier Milhaud, Pierre Vandekerkhove</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> An exact quadratic structure makes the estimator computable without numerical optimisation and yields a transparent asymptotic theory under both hypotheses. (sumy fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">We consider a bivariate contamination model in which the distribution of a gold standard is known, while the mixing weight and the distribution of the contaminant component are unknown, and we test whether the two coordinates of the unknown component are independent. Classical independence tests are meaningless here, since a mixture of product distributions is not a product distribution. Following the Inversion-Best Matching principle, we invert the model for every candidate weight and compare the inverted distribution of the unknown component with the product of its marginals. The weight is estimated where they are closest in a Cramer-von Mises sense, and the scaled minimal distance is the test statistic. An exact quadratic structure makes the estimator computable without numerical optimisation and yields a transparent asymptotic theory under both hypotheses. The null distribution is calibrated by a multiplier bootstrap. Simulations and applications to gene expression data and spam filtering illustrate the method.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.35028" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.35028" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.35028" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.2</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.92</span>
+                        
+                            <span class="badge bg-secondary">math.ST</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">29. Macro Mondrian Conformal Risk Control
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Julien Combes, Jean-Francois Coeurjolly, Alexandre Dervill{é}</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> We propose a new method that controls the risk on average over user-defined groups of the domain, drawing on Mondrian conformal prediction and macro-coverage algorithms. (sumy fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">Conformal Risk Control (CRC) extends conformal prediction beyond the coverage setting to the control of general monotone loss functions, in a distribution-free and modelagnostic fashion. This makes it well-suited to problems with high-dimensional targets, such as the semantic segmentation task addressed in this work. However, CRC guarantees only marginal control, meaning that the risk is controlled on average over the data distribution. Under imbalanced distributions, the risk on inputs that contain rare objects may therefore remain uncontrolled, even when the marginal guarantee holds. We propose a new method that controls the risk on average over user-defined groups of the domain, drawing on Mondrian conformal prediction and macro-coverage algorithms. The method relies on a taxonomy, that is, a function that assigns a group to each data point, and reweights each point&#39;s risk by a coefficient that depends on its group probability, so that rare points contribute more than common ones. We illustrate the approach on two semantic segmentation datasets.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.35035" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.35035" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.35035" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.2</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.92</span>
+                        
+                            <span class="badge bg-secondary">stat.ML</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0 / deep learning, representation learning, probabilistic modeling</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">30. Probing the singlet-triplet scotogenic model with lepton flavor violation, gravitational waves and dark matter
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Shi-Yu Li, Jun-Nan Lu, Yang Zhang, Gui-Jun Ding</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> We perform a comprehensive phenomenological analysis of neutrino masses, lepton-flavor violation, gravitational-wave signature induced by the first-order electroweak phase transition, and scalar dark matter within the framework of the singlet--triplet scotogenic model. (sumy fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">We perform a comprehensive phenomenological analysis of neutrino masses, lepton-flavor violation, gravitational-wave signature induced by the first-order electroweak phase transition, and scalar dark matter within the framework of the singlet--triplet scotogenic model. We derive general analytical expressions for the one-loop Wilson coefficients of the penguin and box contributions to lepton-flavor-violating processes, considering generic scalar and fermion mediators. These general results are then applied to the singlet--triplet scotogenic model to calculate the branching ratios of $μ\to eγ$ and $μ\to e\overline{e}e$, as well as the coherent $μ$--$e$ conversion rate. We systematically investigate the lepton-flavor-violation phenomenology and the constraints from current and future experiments. It is found that the coupling $λ_5$ plays a key role in connecting neutrino masses, lepton flavor violation, and dark matter direct detection. We also study the finite-temperature effective potential and the gravitational-wave signatures of the resulting first-order phase transition. By analyzing the thermal history of the model, we identify the viable parameter space allowing for a first-order electroweak phase transition in the early Universe and find that the portal parameters $λ_1^Ω$ and $μ_1$ play a crucial role in determining the transition strength. The corresponding stochastic gravitational-wave spectra can be probed by future gravitational-wave observatories. As a representative example, we identify a benchmark point that simultaneously satisfies the current constraints from lepton-flavor-violation and dark-matter experiments and generates a stochastic gravitational-wave spectrum that may be probed by the Laser Interferometer Space Antenna, the Big Bang Observer, and the Ultimate Deci-hertz Interferometer Gravitational-wave Observatory.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.35444" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.35444" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.35444" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.2</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.92</span>
+                        
+                            <span class="badge bg-secondary">hep-ph</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">31. ThinkBit: Search Codewords, Recalibrate Scales, Select by Reasoning
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Rhea Sanjay Sukthanker, Pashmina Cameron</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> On Qwen3-1.7B at matched size, our recalibrated checkpoint scores 46.7 on MATH-500 against 30.0 for EfficientQAT trained on the same data, and 73.0 after QAT on reasoning traces; at 0.52 GB it is smaller than every published 2-bit GGUF of the model yet more accurate on MATH-500. (sumy fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">Reasoning language models generate thousands of tokens per answer, and generation speed is limited by memory bandwidth, so storing weights in two bits instead of bfloat16 can potentially make inference 8$\times$ cheaper. Two-bit methods are usually judged by perplexity and multiple-choice question-answering accuracy, both of which say little about whether a model can still reason through more difficult problems. We present ThinkBit, a strictly scalar two-bit framework built to preserve reasoning, in which every weight is an integer codeword times a bfloat16 scale shared by a group of weights. We first use a sensitivity metric to assign each layer a ternary, 2-bit, or 3-bit tier to allocate bitwidths optimally among layers. This is followed by a layerwise Gumbel-softmax-based scalar quantization algorithm that searches for optimal codewords block by block. Since a layerwise scheme does not capture how quantized layers interact with each other, we recalibrate scales, with the codewords frozen, using a knowledge-distillation-based loss against the teacher model. We then perform a short quantization-aware training (QAT) stage that lets the model mimic the base model&#39;s distribution by reassigning codewords. Finally, a paired reasoning test on training problems selects the final checkpoint between the recalibration stage and the QAT stage. On Qwen3-1.7B at matched size, our recalibrated checkpoint scores 46.7 on MATH-500 against 30.0 for EfficientQAT trained on the same data, and 73.0 after QAT on reasoning traces; at 0.52 GB it is smaller than every published 2-bit GGUF of the model yet more accurate on MATH-500. We show that this framework scales and up to 14B, a 3.74 GB model scores 94.8 on MATH-500, against 97.5 for the 29.5 GB bfloat16 model.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.34886" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.34886" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.34886" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.2</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.92</span>
+                        
+                            <span class="badge bg-secondary">cs.AI</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0 / deep learning, representation learning, probabilistic modeling</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">32. From Denoising Dynamics to Endpoint Uncertainty in Diffusion Language Models
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Julio C. Amador Diaz Lopez</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> We study four masked diffusion language models on four reasoning benchmarks, collecting 20 generations per question and 32,000 denoising trajectories in total. (sumy fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">Predictive uncertainty in stochastic language-model inference can be characterized by repeatedly sampling an input and measuring the distribution of outputs. This requires multiple complete generations. Masked diffusion language models expose another source of information: the evolution of the output during denoising. We ask whether convergence within diffusion trajectories is associated with uncertainty across their final outputs, or endpoints. We study four masked diffusion language models on four reasoning benchmarks, collecting 20 generations per question and 32,000 denoising trajectories in total. Within each trajectory, we measure within-run concentration as the area under the curve describing stable resolution of the eventual output. Across repeated trajectories, we measure endpoint-distribution uncertainty. Stronger within-run concentration is associated with lower endpoint entropy after accounting for model and dataset ($β=-0.222$, $p&lt;10^{-25}$). This association persists for multi-token outputs and when reweighting positive-entropy cases. The relationship is asymmetric: high within-run concentration almost exclusively accompanies concentrated endpoint distributions, whereas lower concentration occurs under both concentrated and competing endpoint regimes. This relationship strengthens as denoising proceeds. Features from a single denoising run predict whether independent held-out runs will concentrate on a common endpoint or produce competing endpoints. These results connect dynamics within individual denoising runs to variability across repeated inference. Within-trajectory dynamics contain information about whether independent repetitions will concentrate on a common endpoint or produce competing endpoints, providing a route towards estimating endpoint-distribution properties with fewer complete generations.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.35425" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.35425" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.35425" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.2</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.92</span>
+                        
+                            <span class="badge bg-secondary">cs.AI</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0 / deep learning, representation learning, probabilistic modeling</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">33. When Fusion Order Matters: Insights on Progressive Multimodal Representation Learning for Cross-modal Retrieval
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Haoxiang Zhao, Bin Wang, Yaofei Wang, Xiao Lan, Yunfeng Diao, Xu Wang</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> We introduce Unified Progressive Representation Learning for Order Analysis, or UniPRO, to investigate this question through configurable fusion schedules with matched model components and training settings. (sumy fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">Multimodal video retrieval combines visual, acoustic, and speech information, yet how their fusion order should depend on the data and the retrieval query remains unclear. We introduce Unified Progressive Representation Learning for Order Analysis, or UniPRO, to investigate this question through configurable fusion schedules with matched model components and training settings. Starting from text-to-video retrieval, we find that the tested one-by-one schedules outperform stacked fusion, while changing the order within one-by-one fusion also changes performance. To guide order selection, we examine two complementary considerations: learning difficulty under unequal modality availability and preservation of information relevant to the query. Complete-modality controls show that missing inputs alone cannot explain order sensitivity. At R@1, text and audio retrieval favor schedules that introduce the modality matching the query last. Controlled speech missingness during training and testing reverses the preferred order in both R@1 and SumR, with different crossover points. These findings motivate balancing the two considerations when selecting a fusion path. We then use them to predict a visual-last schedule for image queries, which achieves 97.9 R@1, the highest among the evaluated orders on MSR-VTT-9k. Main experiments on four text-to-video benchmarks establish the effectiveness of UniPRO, with component ablations assessing its supporting design. Together, the results identify fusion order as a task-dependent choice that should account jointly for modality availability and the retrieval query.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.35125" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.35125" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.35125" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.2</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.92</span>
+                        
+                            <span class="badge bg-secondary">cs.AI</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0 / deep learning, representation learning, probabilistic modeling</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">34. Observational constraints on a non-minimally coupled scalar field in non-metricity gravity with an extra degree of freedom
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Saddam Hussain, Ghulam Murtaza, Avik De</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> A complementary autonomous dynamical-system analysis identifies a sequence of critical points describing successive stiff-fluid, transient matter-dominated, and stable de-Sitter phases, ensuring a viable thermal history of the universe. (sumy fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">We investigate a non-minimally coupled scalar field in non-metricity gravity, adopting a non-trivial connection class in spatially flat FLRW spacetimes. In contrast to the coincident-gauge choice, this connection class activates an additional dynamical degree of freedom (DoF) that modifies the background evolution. We study two representative models, defined by power-law and exponential coupling functions with the exponential potential for scalar field. Confronting both models with recent combined datasets - DESI BAO, two independent supernova compilations, and cosmic chronometers - we find that each reproduces an extended matter-dominated era followed by a stable late-time de-Sitter attractor, with inferred parameters consistent with the standard $Λ$CDM model. A complementary autonomous dynamical-system analysis identifies a sequence of critical points describing successive stiff-fluid, transient matter-dominated, and stable de-Sitter phases, ensuring a viable thermal history of the universe. The observational and dynamical results are mutually consistent and support the cosmological viability of the proposed models.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.33146" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.33146" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.33146" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.2</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.92</span>
+                        
+                            <span class="badge bg-secondary">gr-qc</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">35. Polar-structure galaxies beyond the local Universe: first results from Euclid
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Jacob A. Guerrette, Aleksandr V. Mosenkov, Seneca K. H. Bahr, Isaac H. Jensen, Jonah X. George, Thea E. Spigarelli, Ryan P. Smith, Brandon T. Burton, Kevan W. Beckstead, Jonah D. Seguine</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> This search yields the largest high-redshift PSG candidate sample assembled to date, including roughly 100 high-confidence systems with over 50 at $z \gtrsim 0.3$, along with additional populations of face-on rings and polar tidal structures (PTS). (sumy fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">Galaxies hosting strongly misaligned stellar and gas structures offer a direct window into external accretion and the buildup of angular momentum through multiple spin components. Such polar-structure systems are intrinsically rare and, until now, have been identified almost entirely at low redshift. The Euclid Quick Data Release (Q1), with its uniform, space-based VIS imaging, provides an unprecedented opportunity to locate these objects over wide areas and at much greater distances. We present the first visual search for polar-structure galaxy (PSG) candidates in Euclid VIS data, spanning approximately 10% of the Q1 survey footprint. This search yields the largest high-redshift PSG candidate sample assembled to date, including roughly 100 high-confidence systems with over 50 at $z \gtrsim 0.3$, along with additional populations of face-on rings and polar tidal structures (PTS). Robust candidates are detected out to redshifts of $z\sim1$, demonstrating that polar structures can be identified well beyond the local Universe. Although the present sample is not yet sufficient for quantitative occurrence rate or evolutionary measurements, it enables initial classification and basic structural characterization of PSGs at intermediate redshift. These results lay the groundwork for future statistical studies with forthcoming Euclid data releases and illustrate Euclid&#39;s power for rare-object science across cosmic time.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.34049" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.34049" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.34049" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.2</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.92</span>
+                        
+                            <span class="badge bg-secondary">astro-ph.GA</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">36. How Much Information Can We Fit inside a Transformer?
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Amirhossein Basareh, Rishabh Sanjay, Daniel de Mello, Abulhair Saparov</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> Along the depth axis, however, at fixed width, the maximum memorizable dataset size grows sublinearly with the number of layers over the measured range. (sumy fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">How efficiently can transformers store factual knowledge? The answer to this question has implications for both model design and understanding the limits of transformer-based systems. Prior studies observe a linear relationship between the number of facts memorized and the number of model parameters required, substantially worse than what theoretical analyses predict is achievable. We re-examine empirical scaling: through rigorous and systematic experiments, including extensive hyperparameter search via Bayesian optimization, we determine the smallest model that can perfectly memorize a given set of facts, and measure how this minimum size scales with the number of facts. On synthetic datasets of random, independent (subject, relation, object) triples---e.g., (Paris, capital_of, France) ---drawn at random with no exploitable structure, we find that memorization capacity, the size of the largest dataset that a model memorizes completely, grows exponentially with the transformer dimension. Equivalently, the minimum transformer dimension $d_{\min}$ required to memorize $N$ facts grows logarithmically in $N$. Across 11 dataset sizes spanning $N = 45$ to $49{,}920$, a lack-of-fit F-test does not reject the logarithmic fit (with an offset), but it does reject all other tested alternatives including power-law. Along the depth axis, however, at fixed width, the maximum memorizable dataset size grows sublinearly with the number of layers over the measured range. We further extend our exploration to structured data containing symmetric relations or two-hop composition. In this setting, we find that transformers exploit these regularities to further improve capacity. All code to reproduce our results is available at https://github.com/Magronox/transformer_information_capacity.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.34553" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.34553" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.34553" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.2</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.92</span>
+                        
+                            <span class="badge bg-secondary">cs.AI</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0 / deep learning, representation learning, probabilistic modeling</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">37. More: Mode-Optimized Reasoning with Self-Adaptive Effort for Self-Evolving Agents
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Dianxing Shi, Dingjie Fu, Tianyu Lei, Wangjie Qiu</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> By learning mode selection and token expenditure jointly, MORE allocates concise reasoning to tasks that permit it while retaining extended deliberation where it is useful. (sumy fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">Self-evolving training improves the performance of agents on difficult tasks through verifiable feedback, but it often applies costly deliberation uniformly across tasks. To address this problem, we propose Mode-Optimized Reasoning with Self-Adaptive Effort (MORE), a self-evolving training framework that adaptively selects both reasoning form and computational effort for each task. Specifically, MORE follows a two-stage training paradigm: (i) \emph{Stage 1} establishes a compact prior over direct answering, short and long chain-of-thought, and code-based reasoning, and (ii) \emph{Stage 2} self-evolves this prior with Mode-Adaptive and Test-time Effort PPO (MATE-PPO) on generated, verifiable task streams without curated data. By learning mode selection and token expenditure jointly, MORE allocates concise reasoning to tasks that permit it while retaining extended deliberation where it is useful. Across coding, mathematics, and general-reasoning benchmarks, MORE achieves consistent performance gains on Base and Coder backbones at model scales from 3B to 14B. During inference, MORE demonstrates higher accuracy and better efficiency, with markedly shorter response lengths and reduced inference time.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.33684" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.33684" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.33684" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.2</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.92</span>
+                        
+                            <span class="badge bg-secondary">cs.AI</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0 / deep learning, representation learning, probabilistic modeling</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">38. Constraining Supermassive Black Hole Seeding and Accretion via Occupation Fractions and Mass-Weighted Distributions
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Gianni Sims, Vicki Sarajedini</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> Applying a hierarchical Bayesian model, we find that the inferred BHOF remains $100\%$ for host galaxy masses below $10^9 M_\odot$ at lower redshifts. (sumy fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">The formation of supermassive black holes (SMBHs) is a key open problem in galaxy evolution, with light- and heavy-seeding models predicting distinct black hole occupation fractions (BHOFs). Using multiwavelength observations from the LSST Deep Drilling Fields, we measure the AGN fraction and estimate the BHOF across $0&lt;z&lt;1$. Applying a hierarchical Bayesian model, we find that the inferred BHOF remains $100\%$ for host galaxy masses below $10^9 M_\odot$ at lower redshifts. These findings are consistent with light-seed scenarios. Additionally, we computed the black hole masses for several galaxies in the W-CDF-S to test the mass-weighted black hole occupation distributions from semi-analytic models (SAM). Using a reduced-$χ^2$ analysis, we find that the data are consistent with the main-sequence accretion model regardless of the assumed seeding mechanism. These results provide new observational constraints on SMBH seeding and highlight the value of combining deep extragalactic surveys with probabilistic modeling.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.35673" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.35673" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.35673" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.2</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.92</span>
+                        
+                            <span class="badge bg-secondary">astro-ph.GA</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">39. Correlations between Dynamical Dark Energy and Neutrino Parameters
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Ching-Yu Leung, WangZheng Zhang, Ming-Chung Chu</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> Using a Markov Chain Monte Carlo (MCMC) analysis of a joint Planck CMB temperature, DESI BAO, and Pantheon+ dataset, we show a robust parameter degeneracy between the DDE equation of state and neutrino physics. (sumy fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">Recent Baryon Acoustic Oscillation (BAO) data from the Dark Energy Spectroscopic Instrument (DESI), fitted jointly with Cosmic Microwave Background (CMB) and Type Ia Supernovae (SNe) data, favor dynamical dark energy (DDE) over the standard $Λ$CDM model. In this work, we investigate whether the mass and degeneracy of relic neutrinos are degenerate with DDE parameters and can also account for this statistical deviation from $Λ$CDM. Using a Markov Chain Monte Carlo (MCMC) analysis of a joint Planck CMB temperature, DESI BAO, and Pantheon+ dataset, we show a robust parameter degeneracy between the DDE equation of state and neutrino physics. We supplement this with a semi-analytical framework that recovers the numerical correlation, showing that the tight constraint on the CMB acoustic scale drives this degeneracy. Our results highlight the clear correlation between DDE and neutrino parameters, underscoring the critical need to jointly constrain the neutrino sector and the dark sector in next-generation cosmological surveys.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.34445" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.34445" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.34445" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.2</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.92</span>
+                        
+                            <span class="badge bg-secondary">astro-ph.CO</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">40. Linking Detectable Tidal Features to Stellar Halo Growth: An Integrated Analysis of the Outskirts of Massive Early-type Galaxies
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Woowon Byun, Yongmin Yoon, Kyungwon Chun, Jongwan Ko, Jae-Woo Kim</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> Motivated by the finding that massive galaxies with tidal features (GwT) are preferentially found in low-density environments, one wonders whether this trend arises from enhanced debris survivability or from more active mass-assembly histories. (sumy fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">Motivated by the finding that massive galaxies with tidal features (GwT) are preferentially found in low-density environments, one wonders whether this trend arises from enhanced debris survivability or from more active mass-assembly histories. If driven by the latter, structural signatures, such as more developed stellar halos, should also form through cumulative accretion. To address this, we analyze azimuthally averaged surface-brightness profiles of 436 massive early-type galaxies from the DESI Legacy Imaging Survey, comparing the median-stacked profiles of galaxies with tidal features to those without. We find that, after resampling by stellar mass and environmental density, a subtle but systematic structural divergence emerges in the galaxy outskirts ($r&gt;5\times r_{50}$). Specifically, the GwT population in the lower-density &amp; higher-mass regime exhibits a relative intensity excess. This suggests that more developed stellar halos have formed, likely due to longer and/or more significant accretion events. In contrast, those in the higher-density &amp; lower-mass regime show a relative deficiency in intensity, which is reasonable to interpret as a result of structural disruption from environmental effects rather than a lack of cumulative accretion. Our findings suggest that visible tidal features$-$particularly in massive systems within quiet environments$-$do not merely reflect recent stochastic accretion events but also hint at the long-term assembly history of galaxies. This work is a depth-limited study that offers a glimpse into an integrated analysis of tidal debris and stellar halos, thereby introducing a novel pathway to unravel the complex assembly histories of galaxies.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.34966" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.34966" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.34966" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.2</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.92</span>
+                        
+                            <span class="badge bg-secondary">astro-ph.GA</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">41. Inferring the Total Mass of Galaxy Halos Using Photometry
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Chris Brook, Arianna di Cintio, Claudio Dalla Vecchia, Salvador Cardona Barrero, Elena Arjona-Gálvez</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> We analyze galaxies from the SPARC database, combining high-quality rotation curves to infer dark matter halo masses with stellar surface density profiles derived from photometric data to measure $R_1$. (sumy fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">Galaxy size, as defined as the radius at which the stellar surface density reaches $1~\mathrm{M}_\odot\,\mathrm{pc}^{-2}$ ($R_1$), has been shown to correlate more tightly with stellar mass than the effective radius. Cosmological simulations further predict a tight relation between $R_1$ and dark matter halo mass ($M_{200}$), but this prediction has not yet been tested observationally. We present the first observational test of the predicted $R_1$--$M_{200}$ relation and assess whether galaxy size, defined through $R_1$, can serve as a robust estimator of dark matter halo mass. We analyze galaxies from the SPARC database, combining high-quality rotation curves to infer dark matter halo masses with stellar surface density profiles derived from photometric data to measure $R_1$. We then compare the observed relation with the predictions from state-of-the-art cosmological simulations. We find good agreement between observations and simulations: galaxies follow the same tight $R_1$--$M_{200}$ relation predicted by numerical models across the explored mass range, with low intrinsic scatter. We provide the first observational validation of the $R_1$--$M_{200}$ relation, demonstrating that $R_1$ is a simple, physically motivated, and robust estimator of dark matter halo mass. Because $R_1$ is determined entirely from photometric observations, it provides a tool for inferring halo masses from imaging data alone, with applications to studies of galaxy formation and evolution.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.35366" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.35366" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.35366" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.2</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.92</span>
+                        
+                            <span class="badge bg-secondary">astro-ph.GA</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">42. An actively trained neural operator for near-explicit atmospheric chemistry
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Zhi-Song Liu, Wenqing Peng, Ammar Kheder, Michael Boy</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> Coupling a Fourier neural operator with a mixture-of-experts architecture enables active-learning-driven emulation of near-explicit atmospheric chemical kinetics, accurately projecting thousands of species over extended horizons orders of magnitude faster than traditional numerical solvers. (gemini fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">Earth-system models simplify atmospheric chemistry into condensed mechanisms, because near-explicit mechanisms such as the Master Chemical Mechanism (MCM) are too costly to solve in every grid cell. Neural emulators could lift this limit, but most advance the chemistry in small time steps and cover only a few species or a reduced mechanism. Here we introduce FNO-MoE, a Fourier neural operator with a mixture of experts that predicts the full near-explicit chemical state over 30 minutes in a single call. The same network also guides its own training, using the disagreement among its experts to select the most informative box-model simulations. At equal cost, this active sampling yields a more accurate emulator than random or evenly spread sampling. Fine-tuning on longer trajectories keeps it stable over multi-hour runs in which models trained on short simulations diverge. The resulting emulator reproduces the evolution of thousands of species with high fidelity, remains accurate for unseen chemical compositions and runs orders of magnitude faster than the numerical solver. These results open a new direction for emulating complex atmospheric systems: neural operators that predict the full chemical state over long windows and choose their own training data. Training under changing meteorology is the next step towards bringing near-explicit chemistry into Earth-system models.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.33771" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.33771" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.33771" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.2</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.92</span>
+                        
+                            <span class="badge bg-secondary">cs.AI</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">43. Variational Cognitive Memory Abstraction for Long-Horizon Vision-Language-Action Models
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Xinyu Liu, Daiying Tian, Chenwei Tang, Ruyang Han, Chengyang Zhang, Qingyu Zeng, Wei Ju, Liangli Zhen, Jiancheng Lv</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> Integrating a lightweight variational memory architecture into Vision-Language-Action models enables the selective compression and dynamic retrieval of past multimodal context, substantially boosting success rates in long-horizon robotic manipulation. (gemini fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">Vision-Language-Action (VLA) models have shown remarkable success in robotic manipulation, yet their ability to execute long-horizon tasks remains limited by insufficient long- term memory modeling. Existing methods either rely on implicit temporal representations within policy networks, where historical information can be gradually diluted, or maintain explicit memory buffers that suffer from redundancy, noise accumulation, and inefficient retrieval. In this paper, we propose CogMemory, a novel variational cognitive memory framework that enables VLA systems to selectively preserve and reuse task-relevant historical information. Our approach encodes multimodal trajectories into compact latent memory representations through a selective state- space memory encoder, multi-slot temporal abstraction, and variational information compression. During action generation, dynamic cross-attention retrieval with gated fusion adaptively incorporates relevant memories into policy prediction. With merely 3.45M additional parameters, CogMemory stays lightweight and seamlessly fits both early- and intermediate-fusion VLA backbones. Extensive experiments on long-horizon robotic manipulation benchmarks demonstrate consistent improvements across diverse VLA backbones.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.34251" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.34251" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.34251" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.2</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.92</span>
+                        
+                            <span class="badge bg-secondary">cs.AI</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0 / deep learning, representation learning, probabilistic modeling</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">44. Graph-dependent pooling: adaptive granularity in hierarchical graph neural networks
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Bohan Yoon, Hyejin Jang</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> Graph-Dependent Pooling overcomes the constraints of static graph coarsening and layer-wise optimization conflicts by utilizing self-attention to dynamically identify structural anchors, thereby achieving state-of-the-art predictive performance and higher modularity across molecular benchmarks. (gemini fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">Graph Neural Networks are widely used to learn structural representations of relational data. Hierarchical graph pooling learns multi-level representations by progressively coarsening graphs; however, prior methods rely on predefined cluster numbers or fixed pooling ratios, limiting adaptability to individual graphs. We propose Graph-Dependent Pooling (GDPool), which dynamically determines pooling granularity for each graph. We analyze optimization conflicts among layer-wise objectives through gradient alignment, showing that independently supervised pooling levels can send conflicting gradients to shared parameters. GDPool uses self-attention to select graph-specific anchors representing structurally important nodes and constructs coarse graphs through soft node assignment. Experiments on metal-organic framework and molecular graph benchmarks show that GDPool consistently achieves the best predictive performance across all benchmarks. Evaluations using modularity and the effective number of clusters show that GDPool achieves consistently higher modularity than existing methods while the number of active clusters decreases monotonically with depth. Sensitivity analyses confirm stable behavior across hyperparameter and architectural choices.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.33623" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.33623" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.33623" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.2</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.92</span>
+                        
+                            <span class="badge bg-secondary">cs.AI</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0 / deep learning, representation learning, probabilistic modeling</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">45. Power-of-Two Leaky Integrate-and-Fire Neurons for Event-Driven Vision-Language-Action Inference
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Rui Liu, He Lv, Ziyao Zhang, Rui Ma, Rongxiang Nie</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> Integrating power-of-two leaky integrate-and-fire spiking dynamics into pretrained vision-language-action policies slashes arithmetic energy consumption by nearly 87% while maintaining parity with continuous-activation baselines in closed-loop robotic manipulation. (gemini fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">Vision-language-action (VLA) models have demonstrated strong capabilities in robotic manipulation, yet their reliance on dense, continuous-valued computation presents a fundamental challenge for energy-constrained deployment. Inspired by the sparse, event-driven signaling and temporal integration mechanisms of biological neurons, a promising alternative is to introduce spiking computation into VLA models. However, enabling such computation without restructuring pretrained policies or compromising closed-loop control remains an open challenge. To address this challenge, we introduce the Power-of-Two Leaky Integrate-and-Fire (PoT-LIF) neuron, which emits signed spikes with power-of-two amplitudes. By combining magnitude-coded spike events with residual-preserving membrane dynamics, PoT-LIF enables continuous information to be progressively represented through discrete spikes. The Heartbeat formulation further localizes this process within weighted projections, bridging biologically inspired spiking computation and pretrained VLA architectures without modifying their external inference interfaces. We integrate PoT-LIF into the vision projection, vision-language projection, and action projection of $π_{0.5}$ and evaluate both operating modes over 2,000 paired closed-loop LIBERO episodes per configuration. Standard-mode PoT-LIF VLA achieves success rates of 96.90% and 96.35% at $T = 1$ and $T = 2$, respectively, while Heartbeat mode achieves 97.25% and 96.90% at $T = 2$ and $T = 4$, compared with 96.70% for the original continuous-activation $π_{0.5}$ baseline. At $T = 1$ with a 60.01% firing rate, PoT-LIF uses approximately 1/7.67 of the dense-reference arithmetic energy, corresponding to a modeled reduction of 86.95%.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.33658" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.33658" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.33658" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.2</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.92</span>
+                        
+                            <span class="badge bg-secondary">cs.AI</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0 / deep learning, representation learning, probabilistic modeling</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">46. MetaARIMA: Configuration-Level Transfer Learning for ARIMA Models
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Vitor Cerqueira, Ricardo Inácio, Carlos Soares</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> MetaARIMA adapts classical statistical forecasting to cross-dataset transfer learning through a meta-trained configuration policy, surpassing conventional heuristic selection methods and achieving performance competitive with contemporary zero-shot time series foundation models. (gemini fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">Time Series Foundation Models have demonstrated that pretraining on diverse datasets enables effective transfer to new forecasting tasks. Classical methods like ARIMA, however, remain configured and trained independently for each series, discarding knowledge from previous experiments. Consequently, selecting and training an ARIMA configuration remains challenging and often relies on heuristic approaches based on in-sample goodnessof-fit measures. We propose MetaARIMA, a pretrained configuration policy based on metalearning that brings transfer learning to classical statistical forecasting at the configuration level rather than the model level. The policy learns from historical experiments which ARIMA configurations achieve top-quantile performance, and recommends promising candidates for new series while preserving interpretability and local estimation. At inference, it selects a diverse set of candidates via maximal marginal relevance and efficiently identifies the final configuration using successive halving. Experiments in a transfer learning setting, training on M4 and evaluating on M1, M3, and Tourism, show that MetaARIMA outperforms AutoARIMA and other classical methods while being more dataefficient. In a comparison with recent zero-shot foundation models, MetaARIMA remains competitive with Chronos2, Moirai2, and TimesFM. The experiments are publicly available at https://github.com/vcerqueira/experiments-metaarima.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.34171" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.34171" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.34171" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.2</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.92</span>
+                        
+                            <span class="badge bg-secondary">stat.ML</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0 / deep learning, representation learning, probabilistic modeling</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">47. Sequential versus fully conditional specification for tree-based synthesis of health data
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>R{é}my Chapelle, Mohammed Sedki</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> Evaluating sequential and fully conditional tree-based models for medical data synthesis demonstrates equivalent risk-utility tradeoffs, with sequential procedures exhibiting sensitivity to feature ordering while fully conditional frameworks suffer from elevated computational overhead and hyperparameter complexity. (gemini fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">Disseminating synthetic data in place of original ones is a promising way to enforce privacy while complying with open science principles, especially in the healthcare domain. To keep pace with the rate at which researchers collect such data, there is a need for fast and flexible synthesis procedures. A popular class of such procedures is based on models of conditional distributions induced by decision trees. Such models can be combined into a synthetic distribution following two main approaches: sequential specification and fully conditional specification. However, there is currently no recommendation on which specification to use to optimize the risk-utility tradeoffs. In this work, we use both specifications to synthesize medical datasets by combining tree-based models of conditional distributions. We compare the quality of the resulting synthetic data using several metrics of risk and utility. Our results indicate no general superiority of either specification over the other. Sequential synthesis seems sensitive to the ordering of the variables, while the fully conditional specification involves more hyperparameters and incurs higher computational costs, which may limit its suitability for off-the-shelf synthesis procedures.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.35163" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.35163" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.35163" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.2</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.92</span>
+                        
+                            <span class="badge bg-secondary">stat.ML</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0 / deep learning, representation learning, probabilistic modeling</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">48. EnvLunch: The Environment as a Free Lunch for Learning to Interact
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Wei Liu, Min Gao, Yali Du, Yulan He</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> Warming up language-model agents by training them to reconstruct action trajectories solely from terminal execution outcomes provides an effective, label-free pre-training strategy that drastically reduces the need for human-annotated data while boosting downstream task performance. (gemini fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">For agentic data analysis, language-model agents often require a large number of annotated tasks to learn how to interact effectively with executable environments (i.e., databases). While high-quality annotated tasks require heavy manual effort, an executable environment already provides rich interaction structure and verifiable outcomes. In this sense, the environment itself offers a free lunch, an additional set of verifiable tasks that require no human annotation. We propose EnvLunch, a warm-up stage that turns this environmental signal into agent training without human-written or model-generated task descriptions, before downstream agentic reinforcement learning. EnvLunch samples valid action trajectories, executes them to obtain final observations, and trains an agent to recover a functionally equivalent trajectory given only its final observation. This label-free warm-up enables the model to outperform the baseline by over 9 points on average across all downstream training budgets, and with few labels, the baseline needs 8 to 32 times as many annotated examples to match the accuracy that the EnvLunch model reaches at its smallest training budget. Letting the environment alone define the task yields a larger gain than having the model write its own tasks over the same environments, and this warm-up also improves fine-tuning on benchmarks beyond data analysis. EnvLunch therefore saves annotated tasks and provides a better starting point for fine-tuning agentic models when such tasks are limited.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.33817" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.33817" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.33817" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.2</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.92</span>
+                        
+                            <span class="badge bg-secondary">cs.AI</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0 / deep learning, representation learning, probabilistic modeling</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">49. Intrinsic Gradient Barriers in Pushforward Deep Generative Models
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Edric Tam, Qingyang Liu, Barbara Engelhardt, Ray Bai</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> Pushforward mappings from log-concave source distributions to heavy-tailed or multimodal targets fundamentally require large Jacobian gradients, demonstrating that common generative failures stem from intrinsic transport geometry rather than network architecture, a bottleneck that can be mitigated through bijective reparameterizations. (gemini fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">Broad classes of deep generative models (DGMs) operate by learning to map a simple source distribution, such as a standard Gaussian, to a complex high-dimensional target distribution. Despite their success, DGMs often empirically struggle to accurately represent distributions with heavy tails or well-separated modes. In this work, we show that these difficulties reflect intrinsic properties of the underlying transport problem rather than particular neural network architectures or training procedures. We establish quantitative lower bounds on the gradients and Jacobians of pushforward mappings that transport log-concave source distributions to such targets. For heavy-tailed target distributions, the required gradient magnitude grows as the target develops increasingly large moments. For multimodal target distributions, the low-probability regions between well-separated modes similarly force large gradients in the transport map. We discuss how such large derivatives relate to trade-offs between expressivity and numerical stability. Our results hold under substantially weaker regularity conditions than previous analyses and remain stable under perturbations of the target distribution. Finally, we show that these obstructions can be mitigated when the goal is approximation of a given density rather than generative modeling. Specifically, we propose simple classes of bijective reparametrizations that can alleviate the difficult geometric structure and reduce the gradient burden placed on the learned generative map. Numerical experiments support our theoretical analysis.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.34484" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.34484" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.34484" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.2</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.92</span>
+                        
+                            <span class="badge bg-secondary">stat.ML</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0 / deep learning, representation learning, probabilistic modeling</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arxiv-card card mb-4">
+            <div class="arxiv-title card-header">50. Depth Improves Training-Time Scaling for Difficult Tasks in Deep Linear Networks
+                
+            </div>
+            <div class="arxiv-abstract card-body">
+                <div class="arxiv-meta mb-3">
+                    
+                        <strong>Taishi Watanabe, Ryo Karakida, Jun-nosuke Teramae</strong>
+                    
+                </div>
+                <div class="tldr-section mb-3">
+                    <p class="fst-italic text-muted"><strong>TLDR:</strong> Theoretical and empirical analyses demonstrate that increasing network depth enhances training-time scaling exponents exclusively for spectrally challenging tasks, while reparameterizing optimization dynamics by the predictor norm reveals a universal, depth-invariant scaling law across all task complexities. (gemini fallback)</p>
+                </div>
+                <div class="arxiv-abstract-text">Neural scaling laws describe the predictable power-law dependence of model performance on training time, dataset size, and model scale, with the exponents quantifying how performance changes with resources. Recent theory has shown how scaling exponents are shaped by the data distribution and the structure of the learning task, but whether network depth can improve training-time scaling has remained unsettled. Through a refined analysis of deep linear networks, we clarify that the task spectrum determines when increasing network depth improves training-time scaling. For spectrally difficult tasks, increasing depth improves the asymptotic training-time scaling exponent, whereas for easy tasks, the exponent remains independent of depth, with depth affecting only a logarithmic correction at the boundary between these regimes. Remarkably, we find that a reparameterization of time governed by the predictor norm provides a unified description of the dynamics across task difficulties. Under this reparameterization, the loss follows a common scaling law whose exponent is independent of depth. Numerical experiments on a task derived from benchmark image data and with nonlinear networks exhibit qualitatively consistent task-dependent effects of depth on training-time scaling. Our findings advance the theoretical understanding of how task structure shapes the effects of network architecture on learning and offer a basis for studying scaling behavior across broader classes of neural networks.</div>
+                <div class="mt-3">
+                    <div class="arxiv-links mt-2">
+                        <a class="btn btn-sm btn-outline-primary" href="https://arxiv.org/abs/2610.35514" target="_blank">arXiv</a>
+                        <a class="btn btn-sm btn-outline-success" href="https://arxiv.org/pdf/2610.35514" target="_blank">PDF</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="https://ui.adsabs.harvard.edu/#abs/arXiv:2610.35514" target="_blank">ADS</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="arxiv-scores">
+                        <span class="badge bg-success">Total Score: 9.2</span>
+                        <span class="badge bg-info text-dark">Author Score: 0.00</span>
+                        <span class="badge bg-primary">Semantic Score: 0.92</span>
+                        
+                            <span class="badge bg-secondary">stat.ML</span>
+                        
+                        
+                            <span class="badge" style="background-color: #6f42c1; color: white;">Interest: Cluster 0 / deep learning, representation learning, probabilistic modeling</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
         
     </div>
 
